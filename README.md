@@ -8,22 +8,21 @@
 2. Source: `Deploy from a branch`, branch `main`, папка `/ (root)`.
 3. Сохранить — через минуту сайт будет доступен на `https://dragonborn1211.github.io/LumexVPN-Site/`.
 
-## Как подключить домен lumexvpn.com
+## Как подключить домен www.lumexvpn.com
 
-1. В настройках DNS у регистратора домена добавить записи, чтобы `lumexvpn.com` указывал на GitHub Pages:
-   - Для apex-домена (`lumexvpn.com`) — четыре `A`-записи на IP GitHub Pages:
-     ```
-     185.199.108.153
-     185.199.109.153
-     185.199.110.153
-     185.199.111.153
-     ```
-   - Если нужен ещё и `www.lumexvpn.com` — `CNAME`-запись `www` → `dragonborn1211.github.io`.
-2. В Settings → Pages этого репозитория в поле Custom domain указать `lumexvpn.com` (файл `CNAME` в репозитории уже это подсказывает GitHub Pages).
-3. Дождаться проверки DNS (обычно от пары минут до нескольких часов) и включить "Enforce HTTPS" в тех же настройках, как только чекбокс станет доступен.
+**Важно:** сайт живёт на `www.lumexvpn.com`, НЕ на голом `lumexvpn.com` — apex-домен уже занят под VPN-инфраструктуру (front-сервер `62.77.152.215`, см. `frontServerAddress`/`vpnHostname` в `lumex_vpn/lib/core/config/app_config_provider.dart`). Указывать A-записи GitHub Pages на apex **нельзя** — это ломает VPN.
 
-Если API (`api.lumexvpn.com`) уже занимает поддомен на другом сервере — это не конфликтует: `A`-записи ставятся только на сам apex `lumexvpn.com`, `api.` поддомен остаётся как есть.
+1. В DNS (Cloudflare) добавить только одну запись:
+   ```
+   Type: CNAME
+   Name: www
+   Target: dragonborn1211.github.io
+   Proxy status: DNS only (серое облако)
+   ```
+2. Apex `lumexvpn.com` не трогать — там остаётся A-запись на `62.77.152.215` (VPN front).
+3. В Settings → Pages этого репозитория в поле Custom domain указать `www.lumexvpn.com` (файл `CNAME` в репозитории уже это подсказывает GitHub Pages).
+4. Дождаться проверки DNS и включить "Enforce HTTPS", как только чекбокс станет доступен.
 
 ## Ссылка для Google Play Console
 
-После подключения домена — `https://lumexvpn.com/privacy/` (до этого момента можно временно указать `https://dragonborn1211.github.io/LumexVPN-Site/privacy/`, обе страницы идентичны).
+После подключения — `https://www.lumexvpn.com/privacy/` (до этого момента можно временно указать `https://dragonborn1211.github.io/LumexVPN-Site/privacy/`, обе страницы идентичны).
