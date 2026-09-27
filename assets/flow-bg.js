@@ -1,7 +1,10 @@
 /* Animated flowing-light background.
    A procedural WebGL redraw of assets/bg-flow.webp: stays sharp at any size and
    pixel density, and moves — fibre bundles sway, pulses of light run along the
-   streams, sparks twinkle. Without WebGL the page keeps the static image. */
+   streams, sparks twinkle. Behind the streams sits deep space: nebula gas with dust
+   lanes, a star field and a few distant galaxies. It is kept dim, drawn first and
+   scrolls slower than the streams, so the light always stays on top.
+   Without WebGL the page keeps the static image. */
 (function () {
   'use strict';
 
@@ -144,40 +147,190 @@
     '}'
   ].join('\n');
 
+  // ---------- deep space shaders ----------
+  var HP = '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n';
+  var MIRROR = 'vec2 mirrorY(vec2 uv) { return vec2(uv.x, 1.0 - abs(1.0 - mod(uv.y, 2.0))); }\n';
+
+  var FULL_VS = 'attribute vec2 a_v; varying vec2 v_uv; void main() { v_uv = a_v * 0.5 + 0.5; gl_Position = vec4(a_v, 0.0, 1.0); }';
+
+  // Nebula, rendered once per layout into a texture: rgb = gas glow (normalised to 0..1), a = dust.
+  var NEB_GEN_FS = HP + [
+    'varying vec2 v_uv;',
+    'uniform vec2 u_world; uniform float u_unit;',
+    // 2D simplex noise — Ian McEwan, Ashima Arts (MIT)
+    'vec3 permute(vec3 x) { return mod(((x * 34.0) + 1.0) * x, 289.0); }',
+    'float snoise(vec2 v) {',
+    '  const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);',
+    '  vec2 i = floor(v + dot(v, C.yy));',
+    '  vec2 x0 = v - i + dot(i, C.xx);',
+    '  vec2 i1 = x0.x > x0.y ? vec2(1.0, 0.0) : vec2(0.0, 1.0);',
+    '  vec4 x12 = x0.xyxy + C.xxzz;',
+    '  x12.xy -= i1;',
+    '  i = mod(i, 289.0);',
+    '  vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));',
+    '  vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);',
+    '  m = m * m; m = m * m;',
+    '  vec3 x = 2.0 * fract(p * C.www) - 1.0;',
+    '  vec3 h = abs(x) - 0.5;',
+    '  vec3 a0 = x - floor(x + 0.5);',
+    '  m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);',
+    '  vec3 g;',
+    '  g.x = a0.x * x0.x + h.x * x0.y;',
+    '  g.yz = a0.yz * x12.xz + h.yz * x12.yw;',
+    '  return 130.0 * dot(m, g);',
+    '}',
+    'const mat2 OCT = mat2(1.6, 1.2, -1.2, 1.6);',
+    'float fbm(vec2 p) { float s = 0.0, a = 0.5; for (int i = 0; i < 6; i++) { s += a * snoise(p); p = OCT * p + 17.3; a *= 0.5; } return s; }',
+    'float ridged(vec2 p) { float s = 0.0, a = 0.5; for (int i = 0; i < 3; i++) { float n = 1.0 - abs(snoise(p)); s += a * n * n; p = OCT * p + 31.7; a *= 0.5; } return s / 0.875; }',
+    'void main() {',
+    '  vec2 p = v_uv * u_world / u_unit;',
+    // domain warping turns plain noise into wispy, filamentary gas
+    '  vec2 q = vec2(fbm(p * 0.8 + vec2(1.7, 9.2)), fbm(p * 0.8 + vec2(8.3, 2.8)));',
+    '  vec2 r = p + 1.5 * q;',
+    '  float gas = fbm(r + vec2(3.1, 5.4)) * 0.5 + 0.5;',
+    '  float big = fbm(p * 0.28 + vec2(21.0, 4.0)) * 0.5 + 0.5;', // large scale: rich and empty parts of the sky
+    '  float region = smoothstep(0.3, 0.72, big);',
+    '  float glow = smoothstep(0.3, 0.8, gas) * region;',
+    '  float core = pow(smoothstep(0.5, 0.92, gas), 2.0) * region;',
+    '  float hue = fbm(p * 0.4 + q * 0.8 + vec2(-4.0, 7.0)) * 0.5 + 0.5;',
+    '  vec3 c = mix(vec3(0.12, 0.30, 0.90), vec3(0.46, 0.20, 0.92), smoothstep(0.36, 0.56, hue));',
+    '  c = mix(c, vec3(0.88, 0.18, 0.60), smoothstep(0.58, 0.78, hue));',
+    '  c = mix(vec3(0.08, 0.55, 0.85), c, smoothstep(0.2, 0.36, hue));',
+    '  c = mix(c, vec3(1.0, 0.55, 0.40), core * smoothstep(0.6, 0.85, hue) * 0.6);',
+    // gas glow plus the faint diffuse light of unresolved stars
+    '  vec3 em = c * (glow * 0.5 + core * 1.1) + vec3(0.30, 0.34, 0.62) * 0.12 * smoothstep(0.25, 0.8, big);',
+    // dust: broad dark clouds with softer filaments, only visible against the light behind it
+    '  float clouds = smoothstep(0.5, 0.72, fbm(r * 0.7 + vec2(40.0, 13.0)) * 0.5 + 0.5);',
+    '  float lanes = smoothstep(0.62, 0.95, ridged(r * 1.2 + vec2(11.0, 3.0)));',
+    '  float dust = min(1.0, clouds * 0.9 + lanes * 0.55) * smoothstep(0.03, 0.3, dot(em, vec3(0.3, 0.45, 0.25)));',
+    '  em *= 1.0 - 0.9 * dust;',
+    '  gl_FragColor = vec4(min(em, 1.0), dust);',
+    '}'
+  ].join('\n');
+
+  var NEB_VS = [
+    'attribute vec2 a_v;',
+    'uniform vec2 u_view; uniform float u_scroll; uniform vec2 u_world;',
+    'varying vec2 v_uv;',
+    'void main() {',
+    '  vec2 s = vec2(a_v.x * 0.5 + 0.5, 0.5 - a_v.y * 0.5) * u_view;',
+    '  v_uv = (s + vec2(0.0, u_scroll)) / u_world;',
+    '  gl_Position = vec4(a_v, 0.0, 1.0);',
+    '}'
+  ].join('\n');
+
+  var NEB_FS = HP + MIRROR + [
+    'varying vec2 v_uv;',
+    'uniform sampler2D u_tex; uniform vec3 u_bg; uniform float u_gain;',
+    'void main() {',
+    '  vec4 n = texture2D(u_tex, mirrorY(v_uv));', // mirrored past the end, in case the page outgrows it
+    '  vec3 c = u_bg * (1.0 - 0.4 * n.a) + n.rgb * u_gain;',
+    // dither: the gas is a few 8-bit levels deep and would band without it
+    '  c += (fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) - 0.5) / 255.0;',
+    '  gl_FragColor = vec4(c, 1.0);',
+    '}'
+  ].join('\n');
+
+  // Stars and galaxies. a_pos = (x, y, corner); a_st = (radius, brightness, parallax, wrap height);
+  // a_x = (type 0 star / 1 star with diffraction spikes / 2 galaxy, p1, p2, dust extinction), where
+  // p1, p2 = twinkle depth and speed for stars, axis ratio and angle for galaxies.
+  var STAR_VS = [
+    'precision highp float;',
+    'attribute vec4 a_pos; attribute vec4 a_st; attribute vec4 a_col; attribute vec4 a_x;',
+    'uniform vec2 u_view; uniform float u_scroll; uniform float u_time; uniform float u_dpr; uniform float u_nebScroll; uniform vec2 u_world;',
+    'varying vec2 v_q; varying vec4 v_col; varying vec2 v_nuv; varying vec2 v_k;',
+    'void main() {',
+    '  float r = a_st.x, a = a_st.y, type = a_x.x;',
+    // under ~1.4 device px a star shimmers while scrolling: keep the size, dim it instead
+    '  float minR = 1.4 / u_dpr;',
+    '  if (r < minR) { a *= (r / minR) * (r / minR); r = minR; }',
+    '  vec2 q = a_pos.zw * (type > 0.5 && type < 1.5 ? 16.0 : 4.5);',
+    '  vec2 off = q * r;',
+    '  if (type > 1.5) { float c = cos(a_x.z), s = sin(a_x.z); off = mat2(c, s, -s, c) * vec2(off.x, off.y * a_x.y); }',
+    '  else a *= 1.0 + a_x.y * sin(u_time * a_x.z + a_col.w);',
+    // the field wraps around, so it never runs out if the page grows after it was built
+    '  float y = mod(a_pos.y - u_scroll * a_st.z + 48.0, a_st.w) - 48.0;',
+    '  vec2 s = vec2(a_pos.x, y) + off;',
+    '  v_nuv = (s + vec2(0.0, u_nebScroll)) / u_world;',
+    '  vec2 clip = s / u_view * 2.0 - 1.0;',
+    '  gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);',
+    '  v_q = q; v_col = vec4(a_col.rgb, a); v_k = vec2(type, a_x.w);',
+    '}'
+  ].join('\n');
+
+  var STAR_FS = HP + MIRROR + [
+    'varying vec2 v_q; varying vec4 v_col; varying vec2 v_nuv; varying vec2 v_k;',
+    'uniform sampler2D u_tex; uniform float u_hasNeb;',
+    'void main() {',
+    '  float d2 = dot(v_q, v_q), a;',
+    '  if (v_k.x > 1.5) { a = 0.9 * exp(-6.0 * d2) + 0.45 * exp(-2.4 * sqrt(d2)); }', // bulge + exponential disc
+    '  else {',
+    '    a = exp(-2.0 * d2) + 0.1 * exp(-1.8 * sqrt(d2));',
+    '    if (v_k.x > 0.5) { vec2 q = abs(v_q);',
+    '      a += 0.45 * (exp(-2.6 * q.y) * pow(max(0.0, 1.0 - q.x / 16.0), 3.0) + exp(-2.6 * q.x) * pow(max(0.0, 1.0 - q.y / 16.0), 3.0)); }',
+    '  }',
+    // far stars live inside the nebula: hidden by its dust lanes, crowded inside its glow
+    '  if (u_hasNeb > 0.5) {',
+    '    vec4 n = texture2D(u_tex, mirrorY(v_nuv));',
+    '    float lum = dot(n.rgb, vec3(0.3, 0.45, 0.25));',
+    '    a *= (1.0 - 0.9 * v_k.y * n.a) * mix(1.0, 0.45 + 2.5 * lum, v_k.y);',
+    '  }',
+    '  a *= v_col.a;',
+    '  gl_FragColor = vec4(v_col.rgb * a, a);',
+    '}'
+  ].join('\n');
+
   function shader(type, src) {
     var s = gl.createShader(type);
     gl.shaderSource(s, src);
     gl.compileShader(s);
     return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
   }
-  var vs = shader(gl.VERTEX_SHADER, VS), fs = shader(gl.FRAGMENT_SHADER, FS);
-  var prog = vs && fs && gl.createProgram();
-  if (prog) {
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) prog = null;
+  function link(vsSrc, fsSrc, attrs) {
+    var v = shader(gl.VERTEX_SHADER, vsSrc), f = shader(gl.FRAGMENT_SHADER, fsSrc);
+    if (!v || !f) return null;
+    var p = gl.createProgram();
+    gl.attachShader(p, v);
+    gl.attachShader(p, f);
+    for (var i = 0; i < attrs.length; i++) gl.bindAttribLocation(p, i, attrs[i]);
+    gl.linkProgram(p);
+    return gl.getProgramParameter(p, gl.LINK_STATUS) ? p : null;
   }
-  if (!prog) { fallback(); return; }
-  gl.useProgram(prog);
+  function uniforms(p, names) {
+    var u = {};
+    for (var i = 0; i < names.length; i++) u[names[i]] = gl.getUniformLocation(p, names[i]);
+    return u;
+  }
+  // Attribute i of every program is bound to location i; switch buffers and layouts per pass.
+  var enabledAttribs = 0;
+  function attribs(buffer, layout, stride) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    for (var i = 0; i < layout.length; i++) gl.vertexAttribPointer(i, layout[i][0], gl.FLOAT, false, stride * 4, layout[i][1] * 4);
+    for (i = enabledAttribs; i < layout.length; i++) gl.enableVertexAttribArray(i);
+    for (i = layout.length; i < enabledAttribs; i++) gl.disableVertexAttribArray(i);
+    enabledAttribs = layout.length;
+  }
 
+  var prog = link(VS, FS, ['a_c', 'a_n', 'a_p', 'a_col', 'a_f', 'a_g']);
+  if (!prog) { fallback(); return; }
   var FLOATS = 20;
+  var LAYOUT = [[2, 0], [2, 2], [4, 4], [4, 8], [4, 12], [4, 16]];
   var vbo = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  [['a_c', 2, 0], ['a_n', 2, 2], ['a_p', 4, 4], ['a_col', 4, 8], ['a_f', 4, 12], ['a_g', 4, 16]].forEach(function (a) {
-    var loc = gl.getAttribLocation(prog, a[0]);
-    if (loc < 0) return;
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, a[1], gl.FLOAT, false, FLOATS * 4, a[2] * 4);
-  });
-  var uView = gl.getUniformLocation(prog, 'u_view');
-  var uScroll = gl.getUniformLocation(prog, 'u_scroll');
-  var uTime = gl.getUniformLocation(prog, 'u_time');
-  var uDpr = gl.getUniformLocation(prog, 'u_dpr');
-  var uFlow = gl.getUniformLocation(prog, 'u_flow');
+  var U = uniforms(prog, ['u_view', 'u_scroll', 'u_time', 'u_dpr', 'u_flow']);
+
+  // Space is optional: if any of its programs fails, the streams still run on the plain dark colour.
+  var nebGen = link(FULL_VS, NEB_GEN_FS, ['a_v']);
+  var nebDraw = link(NEB_VS, NEB_FS, ['a_v']);
+  var starProg = link(STAR_VS, STAR_FS, ['a_pos', 'a_st', 'a_col', 'a_x']);
+  var UG = nebGen && uniforms(nebGen, ['u_world', 'u_unit']);
+  var UN = nebDraw && uniforms(nebDraw, ['u_view', 'u_scroll', 'u_world', 'u_bg', 'u_gain']);
+  var US = starProg && uniforms(starProg, ['u_view', 'u_scroll', 'u_time', 'u_dpr', 'u_nebScroll', 'u_world', 'u_hasNeb']);
+  var triBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, triBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  var starBuf = gl.createBuffer();
+
   gl.disable(gl.DEPTH_TEST);
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_COLOR); // screen: overlapping light saturates softly instead of clipping
 
   // ---------- geometry ----------
   var buf = new Float32Array(1 << 18), len = 0, verts = 0, dupFirst = false;
@@ -380,6 +533,99 @@
     quad(x, y, 1, 0, 20 * map.sx, COL.white, 0.9 * k, 0, rnd() * 6.2832, 2, 0, rnd());
   }
 
+  // ---------- deep space ----------
+  var NEB_PAR = 0.18;   // scroll factor of the nebula and the far stars (streams: PARALLAX)
+  var NEB_TEXEL = 2;    // CSS px per nebula texel: the gas is soft, bilinear upscaling hides it
+  var NEB_GAIN = 0.26;  // brightness of the gas over the background colour
+  // [r, g, b, weight]: blue-white, white, yellow-white, orange, red
+  var STAR_COL = [[0.72, 0.82, 1.00, 0.28], [0.92, 0.95, 1.00, 0.32], [1.00, 0.94, 0.84, 0.22], [1.00, 0.79, 0.56, 0.14], [1.00, 0.63, 0.50, 0.04]];
+  // per = CSS px² of sky per star; ext = how much the nebula's dust and glow affect the layer
+  var STAR_LAYERS = [
+    { par: NEB_PAR, per: 450, r: [0.45, 0.9], b: [0.25, 0.9], tw: 0.1, ext: 1, spikes: 0 },
+    { par: 0.28, per: 2600, r: [0.6, 1.3], b: [0.4, 1.0], tw: 0.2, ext: 0.55, spikes: 0 },
+    { par: 0.38, per: 30000, r: [1.0, 2.0], b: [0.7, 1.0], tw: 0.25, ext: 0.2, spikes: 0.4 }
+  ];
+  var GALAXY_PER = 260000;
+
+  var nebTex = null, nebFbo = null, nebKey = '', nebWorld = [1, 1];
+  function buildNebula(w, h) {
+    if (!nebGen || !nebDraw) return;
+    var maxT = Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE) || 2048, 4096);
+    var texel = Math.max(NEB_TEXEL, w / maxT, h / maxT);
+    var tw = Math.ceil(w / texel), th = Math.ceil(h / texel);
+    var key = w + 'x' + th;
+    if (key === nebKey) return;
+    if (!nebTex) { nebTex = gl.createTexture(); nebFbo = gl.createFramebuffer(); }
+    gl.bindTexture(gl.TEXTURE_2D, nebTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, tw, th, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.bindTexture(gl.TEXTURE_2D, null); // never bound while it is being rendered into
+    gl.bindFramebuffer(gl.FRAMEBUFFER, nebFbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, nebTex, 0);
+    nebKey = '';
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
+      nebWorld = [tw * texel, th * texel];
+      gl.viewport(0, 0, tw, th);
+      gl.disable(gl.BLEND);
+      gl.useProgram(nebGen);
+      attribs(triBuf, [[2, 0]], 2);
+      gl.uniform2f(UG.u_world, nebWorld[0], nebWorld[1]);
+      gl.uniform1f(UG.u_unit, Math.min(1600, Math.max(560, w)) * 0.75); // gas features follow the screen size
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      nebKey = key;
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+
+  var sbuf = new Float32Array(1 << 16), slen = 0, starCount = 0;
+  var SQ = [[-1, -1], [1, -1], [-1, 1], [-1, 1], [1, -1], [1, 1]];
+  function star(x, y, r, b, par, wrapH, c, ph, type, p1, p2, ext) {
+    if (slen + 96 > sbuf.length) { var nb = new Float32Array(sbuf.length * 2); nb.set(sbuf); sbuf = nb; }
+    for (var i = 0; i < 6; i++) {
+      sbuf[slen++] = x; sbuf[slen++] = y; sbuf[slen++] = SQ[i][0]; sbuf[slen++] = SQ[i][1];
+      sbuf[slen++] = r; sbuf[slen++] = b; sbuf[slen++] = par; sbuf[slen++] = wrapH;
+      sbuf[slen++] = c[0]; sbuf[slen++] = c[1]; sbuf[slen++] = c[2]; sbuf[slen++] = ph;
+      sbuf[slen++] = type; sbuf[slen++] = p1; sbuf[slen++] = p2; sbuf[slen++] = ext;
+    }
+  }
+  function starColour(u) {
+    for (var i = 0; i < STAR_COL.length - 1; i++) { u -= STAR_COL[i][3]; if (u < 0) break; }
+    return STAR_COL[i];
+  }
+  function buildSpace(vw, vh, docH) {
+    buildNebula(vw, vh + (docH - vh) * NEB_PAR + vh * 0.5);
+    if (!starProg) return;
+    var rnd = rng(7331), TAU = 6.2832, H, n, i;
+    slen = 0;
+    for (var l = 0; l < STAR_LAYERS.length; l++) {
+      var L = STAR_LAYERS[l];
+      H = vh + (docH - vh) * L.par + vh * 0.5 + 96;
+      n = Math.round(vw * H / L.per);
+      for (i = 0; i < n; i++) {
+        var m = Math.pow(rnd(), 2.5); // most stars faint, a few bright
+        var spikes = m > 0.55 && rnd() < L.spikes;
+        star(rnd() * vw, rnd() * H - 48,
+          L.r[0] + (L.r[1] - L.r[0]) * m * (0.7 + 0.3 * rnd()), L.b[0] + (L.b[1] - L.b[0]) * m,
+          L.par, H, starColour(rnd()), rnd() * TAU,
+          spikes ? 1 : 0, L.tw * (0.5 + rnd()), 0.4 + 1.4 * rnd(), L.ext);
+      }
+    }
+    H = vh + (docH - vh) * NEB_PAR + vh * 0.5 + 96;
+    n = Math.round(vw * H / GALAXY_PER);
+    for (i = 0; i < n; i++) {
+      star(rnd() * vw, rnd() * H - 48, 2.8 + 5 * Math.pow(rnd(), 2), 0.2 + 0.16 * rnd(),
+        NEB_PAR, H, rnd() < 0.6 ? [1.0, 0.9, 0.8] : [0.8, 0.86, 1.0], 0,
+        2, 0.25 + 0.55 * rnd(), rnd() * TAU, 0.6);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, starBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, sbuf.subarray(0, slen), gl.STATIC_DRAW);
+    starCount = slen / 16;
+  }
+
   var count = 0, builtW = 0, flowScale = 1;
   function build() {
     var vw = window.innerWidth, vh = window.innerHeight;
@@ -406,9 +652,11 @@
       for (var i = 0; i < STREAMS.length; i++) emitStream(STREAMS[i], map, rnd, small ? 22 : 44, gs, small);
       for (var j = 0; j < NODES.length; j++) emitNode(NODES[j], map, rnd);
     }
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     gl.bufferData(gl.ARRAY_BUFFER, buf.subarray(0, len), gl.STATIC_DRAW);
     count = verts;
     builtW = vw;
+    buildSpace(vw, vh, docH);
   }
 
   // ---------- canvas & loop ----------
@@ -428,13 +676,45 @@
   var raf = 0, running = false, shown = false;
   function draw(now) {
     raf = 0;
+    var y = window.pageYOffset || 0, t = REDUCE ? 16 : (now / 1000) % 20000;
     gl.clearColor(BG[0], BG[1], BG[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.uniform2f(uView, cw, ch);
-    gl.uniform1f(uScroll, (window.pageYOffset || 0) * PARALLAX);
-    gl.uniform1f(uTime, REDUCE ? 16 : (now / 1000) % 20000);
-    gl.uniform1f(uDpr, dpr);
-    gl.uniform1f(uFlow, flowScale);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, nebKey ? nebTex : null);
+    if (nebKey) {
+      gl.disable(gl.BLEND);
+      gl.useProgram(nebDraw);
+      attribs(triBuf, [[2, 0]], 2);
+      gl.uniform2f(UN.u_view, cw, ch);
+      gl.uniform1f(UN.u_scroll, y * NEB_PAR);
+      gl.uniform2f(UN.u_world, nebWorld[0], nebWorld[1]);
+      gl.uniform3f(UN.u_bg, BG[0], BG[1], BG[2]);
+      gl.uniform1f(UN.u_gain, NEB_GAIN);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+    gl.enable(gl.BLEND);
+    if (starCount) {
+      gl.blendFunc(gl.ONE, gl.ONE);
+      gl.useProgram(starProg);
+      attribs(starBuf, [[4, 0], [4, 4], [4, 8], [4, 12]], 16);
+      gl.uniform2f(US.u_view, cw, ch);
+      gl.uniform1f(US.u_scroll, y);
+      gl.uniform1f(US.u_time, t);
+      gl.uniform1f(US.u_dpr, dpr);
+      gl.uniform1f(US.u_nebScroll, y * NEB_PAR);
+      gl.uniform2f(US.u_world, nebWorld[0], nebWorld[1]);
+      gl.uniform1f(US.u_hasNeb, nebKey ? 1 : 0);
+      gl.drawArrays(gl.TRIANGLES, 0, starCount);
+    }
+    // streams on top — screen: overlapping light saturates softly instead of clipping
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_COLOR);
+    gl.useProgram(prog);
+    attribs(vbo, LAYOUT, FLOATS);
+    gl.uniform2f(U.u_view, cw, ch);
+    gl.uniform1f(U.u_scroll, y * PARALLAX);
+    gl.uniform1f(U.u_time, t);
+    gl.uniform1f(U.u_dpr, dpr);
+    gl.uniform1f(U.u_flow, flowScale);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, count);
     if (!shown) { shown = true; canvas.classList.add('on'); }
     if (running) raf = requestAnimationFrame(draw);
