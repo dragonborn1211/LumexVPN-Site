@@ -12,6 +12,7 @@
 <meta property="og:type" content="website" />
 <link rel="icon" href="/assets/icon.png" />
 <link rel="apple-touch-icon" href="/assets/icon.png" />
+<script>document.documentElement.classList.add('bg-live');</script>
 <style>
   :root {
     --bg: #0A0E1A;
@@ -44,6 +45,20 @@
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
   }
+  /* Live WebGL version of the background (assets/flow-bg.js); the image above stays as the no-WebGL fallback */
+  #flow-bg {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  #flow-bg.on { opacity: 1; }
+  html.bg-live #flow-bg { display: block; }
+  html.bg-live body { background: var(--bg); }
   a { color: inherit; }
   img { max-width: 100%; display: block; }
   .wrap {
@@ -191,6 +206,11 @@
     margin: 0;
   }
 
+  /* Copy sitting straight on the light streams gets a dark halo so it stays readable */
+  .hero h1, .hero p.lead, .hero-feature span, .eyebrow-plain, .section-head h2, .section-head p, .payment-note {
+    text-shadow: 0 1px 14px rgba(10,14,26,0.95), 0 0 4px rgba(10,14,26,0.7);
+  }
+
   /* ---------- Hero ---------- */
   .hero {
     padding: 64px 0 90px;
@@ -213,6 +233,9 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    /* text-shadow would paint over background-clipped glyphs; drop-shadow applies to the rendered result */
+    text-shadow: none;
+    filter: drop-shadow(0 1px 10px rgba(10,14,26,0.9));
   }
   .hero p.lead {
     max-width: 460px;
@@ -596,6 +619,8 @@
 </style>
 </head>
 <body>
+
+<canvas id="flow-bg" aria-hidden="true"></canvas>
 
 <!-- Icon sprite — line art in the brand streak gradient (pink → purple → cyan) -->
 <!-- Hidden via zero size + overflow, not display:none — some browsers won't render <use> against a display:none source -->
@@ -1050,6 +1075,6 @@
 </footer>
 </div>
 
-
+<script src="/assets/flow-bg.js"></script>
 </body>
 </html>
