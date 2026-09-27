@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>LumexVPN — быстрый и безопасный VPN</title>
-<meta name="description" content="LumexVPN — быстрый и безопасный VPN-клиент для Android, iOS, Windows, macOS и Linux. Шифрование военного уровня, ноль логов, удобная оплата." />
+<meta name="description" content="LumexVPN — быстрый и безопасный VPN-клиент для Android, iOS, Windows, macOS и Linux. Шифрование военного уровня, ноль логов, подписка от 250 ₽/месяц." />
 <meta name="theme-color" content="#0A0E1A" />
 <meta property="og:title" content="LumexVPN — быстрый и безопасный VPN" />
 <meta property="og:description" content="Поток света и энергии. Без границ." />
@@ -29,7 +29,7 @@
     --radius-lg: 20px;
     --radius-md: 14px;
     --radius-sm: 10px;
-    --max: 1120px;
+    --max: 1160px;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -107,11 +107,6 @@
     transition: color 0.15s;
   }
   .nav-links a:hover { color: #fff; }
-  .nav-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
   .menu-toggle {
     display: none;
     background: none;
@@ -153,6 +148,7 @@
     color: #fff;
   }
   .btn-outline:hover { border-color: var(--pink); }
+  .btn-pill { border-radius: 999px; }
   .btn-card {
     background: var(--bg);
     border-color: var(--divider);
@@ -161,90 +157,32 @@
   }
   .btn-card:hover { border-color: var(--purple); background: rgba(155,92,255,0.08); }
   .btn-sm { padding: 9px 14px; font-size: 13px; }
+  .btn-block { width: 100%; }
 
-  /* ---------- Hero ---------- */
-  .hero {
-    padding: 96px 0 80px;
-    text-align: center;
-    overflow: hidden;
+  /* ---------- Section headers ---------- */
+  .section-head {
+    max-width: 620px;
+    margin: 0 0 40px;
   }
-  .eyebrow {
+  .section-head.centered { text-align: center; margin-left: auto; margin-right: auto; }
+  .eyebrow-plain {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: var(--card);
-    border: 1px solid var(--divider);
-    color: var(--text-secondary);
+    color: var(--text-muted);
     font-size: 13px;
-    font-weight: 500;
-    padding: 6px 14px;
-    border-radius: 999px;
-    margin-bottom: 28px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    margin-bottom: 16px;
   }
+  .section-head.centered .eyebrow-plain { justify-content: center; }
   .dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: var(--cyan);
     box-shadow: 0 0 8px var(--cyan);
-  }
-  .hero h1 {
-    font-size: 56px;
-    line-height: 1.08;
-    font-weight: 800;
-    letter-spacing: -1.5px;
-    margin: 0 0 20px;
-    background: linear-gradient(90deg, #fff 0%, #fff 38%, var(--pink) 58%, var(--purple) 78%, var(--cyan) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .hero p.lead {
-    max-width: 560px;
-    margin: 0 auto 36px;
-    color: var(--text-secondary);
-    font-size: 18px;
-    line-height: 1.6;
-  }
-  .hero-actions {
-    display: flex;
-    gap: 14px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-bottom: 48px;
-  }
-  .chips {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 13px;
-    color: var(--text-secondary);
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--divider);
-    padding: 8px 14px;
-    border-radius: 999px;
-  }
-  .chip svg { width: 15px; height: 15px; flex-shrink: 0; }
-
-  /* ---------- Section headers ---------- */
-  .section-head {
-    text-align: center;
-    max-width: 560px;
-    margin: 0 auto 52px;
-  }
-  .section-tag {
-    color: var(--pink);
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
+    flex-shrink: 0;
   }
   .section-head h2 {
     font-size: 34px;
@@ -259,10 +197,171 @@
     margin: 0;
   }
 
-  /* ---------- Features ---------- */
-  .features {
-    padding: 40px 0 100px;
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 64px 0 90px;
+    overflow: hidden;
   }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 32px;
+    align-items: center;
+  }
+  .hero h1 {
+    font-size: 52px;
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -1.3px;
+    margin: 0 0 20px;
+  }
+  .hero h1 .grad {
+    background: linear-gradient(90deg, var(--pink) 0%, var(--orange) 35%, var(--purple) 70%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero p.lead {
+    max-width: 460px;
+    margin: 0 0 32px;
+    color: var(--text-secondary);
+    font-size: 17px;
+    line-height: 1.6;
+  }
+  .hero-features {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 44px;
+  }
+  .hero-feature {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 22px;
+    border-left: 1px solid var(--divider);
+  }
+  .hero-feature:first-child { padding-left: 0; border-left: none; }
+  .hero-feature-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .hero-feature-icon svg { width: 17px; height: 17px; position: relative; z-index: 1; }
+  .hero-feature span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    line-height: 1.3;
+  }
+
+  /* ---------- Hero device mockups ---------- */
+  .hero-devices {
+    position: relative;
+    height: 420px;
+  }
+  .device {
+    position: absolute;
+    background: #0c0f16;
+    border: 2px solid rgba(255,255,255,0.10);
+    box-shadow: 0 30px 70px -25px rgba(0,0,0,0.7);
+  }
+  .device-screen {
+    position: absolute;
+    background-image: url('/assets/icon.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
+  .device-laptop {
+    width: 76%;
+    height: 60%;
+    left: 0;
+    top: 8%;
+    border-radius: 12px 12px 3px 3px;
+    transform: perspective(1000px) rotateY(7deg) rotateX(2deg);
+  }
+  .device-laptop .device-screen {
+    inset: 4% 4% 9% 4%;
+    border-radius: 3px;
+    background-position: 46% 56%;
+  }
+  .laptop-base {
+    position: absolute;
+    left: -5%;
+    right: -5%;
+    bottom: -14px;
+    height: 12px;
+    background: linear-gradient(180deg, #1b202b, #0c0f16);
+    border-radius: 0 0 10px 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-top: none;
+  }
+  .device-tablet {
+    width: 30%;
+    height: 48%;
+    right: 2%;
+    top: -4%;
+    border-radius: 16px;
+    transform: rotate(-9deg);
+  }
+  .device-tablet .device-screen {
+    inset: 5%;
+    border-radius: 8px;
+    background-position: 50% 52%;
+  }
+  .device-phone {
+    width: 18%;
+    height: 44%;
+    right: 8%;
+    bottom: -6%;
+    border-radius: 22px;
+    transform: rotate(7deg);
+    border-color: rgba(255,255,255,0.14);
+  }
+  .device-phone .device-screen {
+    inset: 3.5% 3%;
+    border-radius: 16px;
+    background-position: 50% 55%;
+  }
+  .device-notch {
+    position: absolute;
+    top: 3%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32%;
+    height: 3%;
+    min-height: 5px;
+    background: #0c0f16;
+    border-radius: 4px;
+    z-index: 2;
+  }
+
+  /* ---------- Shared glowing icon badge ---------- */
+  .feature-icon, .app-icon, .pay-icon, .hero-feature-icon {
+    position: relative;
+    isolation: isolate;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--divider);
+  }
+  .feature-icon::before, .app-icon::before, .pay-icon::before, .hero-feature-icon::before {
+    content: '';
+    position: absolute;
+    inset: -60%;
+    background: radial-gradient(circle, var(--accent, var(--purple)) 0%, transparent 70%);
+    filter: blur(16px);
+    opacity: 0.55;
+    z-index: -1;
+  }
+  .i-pink { --accent: var(--pink); }
+  .i-orange { --accent: var(--orange); }
+  .i-purple { --accent: var(--purple); }
+  .i-cyan { --accent: var(--cyan); }
+
+  /* ---------- Features ---------- */
+  .features { padding: 40px 0 100px; }
   .features-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -279,26 +378,6 @@
     border-color: rgba(255,255,255,0.16);
     transform: translateY(-3px);
   }
-  /* Shared glowing icon badge — used by feature/app/payment icons */
-  .feature-icon, .app-icon, .pay-icon {
-    position: relative;
-    isolation: isolate;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--divider);
-  }
-  .feature-icon::before, .app-icon::before, .pay-icon::before {
-    content: '';
-    position: absolute;
-    inset: -60%;
-    background: radial-gradient(circle, var(--accent, var(--purple)) 0%, transparent 70%);
-    filter: blur(16px);
-    opacity: 0.55;
-    z-index: -1;
-  }
-  .i-pink { --accent: var(--pink); }
-  .i-orange { --accent: var(--orange); }
-  .i-purple { --accent: var(--purple); }
-  .i-cyan { --accent: var(--cyan); }
   .feature-icon {
     width: 46px;
     height: 46px;
@@ -309,46 +388,27 @@
     margin-bottom: 18px;
   }
   .feature-icon svg { width: 22px; height: 22px; position: relative; z-index: 1; }
-  .feature-card h3 {
-    font-size: 16px;
-    font-weight: 700;
-    margin: 0 0 8px;
-  }
-  .feature-card p {
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--text-secondary);
-    margin: 0;
-  }
+  .feature-card h3 { font-size: 16px; font-weight: 700; margin: 0 0 8px; }
+  .feature-card p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
 
   /* ---------- Apps ---------- */
-  .apps {
-    padding: 40px 0 100px;
-  }
+  .apps { padding: 40px 0 100px; }
   .apps-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 18px;
   }
   .app-card {
     background: var(--card);
     border: 1px solid var(--divider);
     border-radius: var(--radius-lg);
-    padding: 26px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;
     transition: border-color 0.2s, transform 0.2s;
   }
-  .app-card:hover {
-    border-color: rgba(255,255,255,0.16);
-    transform: translateY(-3px);
-  }
-  .app-top {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
+  .app-card:hover { border-color: rgba(255,255,255,0.16); transform: translateY(-3px); }
   .app-icon {
     width: 48px;
     height: 48px;
@@ -359,148 +419,158 @@
     flex-shrink: 0;
   }
   .app-icon svg { width: 24px; height: 24px; position: relative; z-index: 1; }
-  .app-meta h3 {
-    font-size: 16px;
-    font-weight: 700;
-    margin: 0 0 3px;
-  }
-  .app-meta span {
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-  .app-desc {
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.55;
-    margin: 0;
-    flex-grow: 1;
-  }
-  .app-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  .app-actions .btn { flex: 1; }
-  .badge-soon {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    background: rgba(255,255,255,0.06);
-    padding: 3px 8px;
-    border-radius: 999px;
-    margin-left: auto;
-    align-self: flex-start;
-  }
+  .app-meta h3 { font-size: 16px; font-weight: 700; margin: 0 0 3px; }
+  .app-meta span { font-size: 12px; color: var(--text-muted); }
+  .app-actions { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
 
   /* ---------- Payment ---------- */
-  .payment {
-    padding: 40px 0 100px;
-  }
-  .payment-grid {
+  .payment { padding: 40px 0 100px; }
+  .payment-layout {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 32px;
+    align-items: start;
   }
-  .pay-card {
+  .payment-methods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+  }
+  .pay-tile {
     background: var(--card);
     border: 1px solid var(--divider);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
+    border-radius: var(--radius-md);
+    padding: 20px 16px;
+    text-align: center;
     transition: border-color 0.2s, transform 0.2s;
   }
-  .pay-card:hover {
-    border-color: rgba(255,255,255,0.16);
-    transform: translateY(-3px);
-  }
+  .pay-tile:hover { border-color: rgba(255,255,255,0.16); transform: translateY(-3px); }
   .pay-icon {
-    width: 46px;
-    height: 46px;
+    width: 42px;
+    height: 42px;
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+    margin: 0 auto 12px;
   }
-  .pay-icon svg { width: 22px; height: 22px; position: relative; z-index: 1; }
-  .pay-info { flex-grow: 1; min-width: 0; }
-  .pay-info h3 {
-    font-size: 15px;
-    font-weight: 700;
-    margin: 0 0 3px;
-  }
-  .pay-info p {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin: 0;
-  }
-  .pay-card .btn {
-    flex-shrink: 0;
-  }
+  .pay-icon svg { width: 20px; height: 20px; position: relative; z-index: 1; }
+  .pay-tile h3 { font-size: 14px; font-weight: 700; margin: 0 0 4px; }
+  .pay-tile p { font-size: 12px; color: var(--text-muted); margin: 0; line-height: 1.4; }
 
-  .payment-note {
-    text-align: center;
+  .pricing-card {
+    background: var(--card);
+    border: 1px solid var(--divider);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+  }
+  .pricing-card h3 { font-size: 15px; font-weight: 700; margin: 0 0 14px; color: var(--text-secondary); }
+  .price-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 24px; }
+  .price-value {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(90deg, #fff, var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .price-period { font-size: 15px; color: var(--text-muted); }
+  .pricing-list {
+    list-style: none;
+    margin: 0 0 26px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+  }
+  .pricing-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+  .pricing-list svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+  .pricing-note {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 16px;
     color: var(--text-faint);
     font-size: 12px;
-    margin-top: 32px;
+  }
+  .pricing-note svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+  .payment-note {
+    color: var(--text-faint);
+    font-size: 12px;
+    margin-top: 28px;
   }
 
-  /* ---------- CTA ---------- */
-  .cta {
-    padding: 20px 0 100px;
-  }
-  .cta-box {
-    position: relative;
-    overflow: hidden;
-    border-radius: 28px;
+  /* ---------- FAQ ---------- */
+  .faq { padding: 40px 0 100px; }
+  .faq-list { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+  .faq-item {
+    background: var(--card);
     border: 1px solid var(--divider);
-    background: linear-gradient(135deg, rgba(255,77,141,0.10), rgba(155,92,255,0.10) 50%, rgba(0,229,255,0.10));
-    padding: 64px 32px;
-    text-align: center;
+    border-radius: var(--radius-md);
+    padding: 4px 22px;
   }
-  .cta-box h2 {
-    font-size: 30px;
-    font-weight: 800;
-    letter-spacing: -0.6px;
-    margin: 0 0 14px;
+  .faq-item summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 18px 0;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
   }
-  .cta-box p {
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::after {
+    content: '+';
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .faq-item[open] summary::after { transform: rotate(45deg); }
+  .faq-item p {
+    margin: 0 0 20px;
     color: var(--text-secondary);
-    font-size: 16px;
-    margin: 0 0 32px;
+    font-size: 14px;
+    line-height: 1.6;
   }
 
   /* ---------- Footer ---------- */
-  footer {
-    border-top: 1px solid var(--divider);
-    padding: 56px 0 32px;
-  }
-  .footer-grid {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr 1fr;
-    gap: 32px;
-    margin-bottom: 40px;
-  }
-  .footer-brand .brand { margin-bottom: 14px; }
-  .footer-brand p {
-    color: var(--text-muted);
-    font-size: 13px;
-    line-height: 1.6;
-    max-width: 260px;
-    margin: 0 0 20px;
-  }
-  .footer-social {
+  footer { border-top: 1px solid var(--divider); padding: 36px 0; }
+  .footer-row {
     display: flex;
-    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
   }
+  .footer-brand { display: flex; flex-direction: column; gap: 4px; }
+  .footer-brand .brand { margin-bottom: 2px; }
+  .footer-brand span.tagline { font-size: 12px; color: var(--text-faint); }
+  .footer-links { display: flex; flex-wrap: wrap; gap: 22px; }
+  .footer-links a {
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    transition: color 0.15s;
+  }
+  .footer-links a:hover { color: #fff; }
+  .footer-social { display: flex; gap: 10px; }
   .footer-social a {
     width: 36px;
     height: 36px;
-    border-radius: var(--radius-sm);
+    border-radius: 999px;
     border: 1px solid var(--divider);
     display: flex;
     align-items: center;
@@ -511,65 +581,24 @@
   }
   .footer-social a:hover { border-color: var(--pink); color: #fff; }
   .footer-social svg { width: 16px; height: 16px; }
-  .footer-col h4 {
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-muted);
-    margin: 0 0 16px;
-  }
-  .footer-col ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .footer-col a {
-    text-decoration: none;
-    color: var(--text-secondary);
-    font-size: 14px;
-    transition: color 0.15s;
-  }
-  .footer-col a:hover { color: #fff; }
-  .footer-bottom {
-    border-top: 1px solid var(--divider);
-    padding-top: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .footer-bottom span {
-    color: var(--text-faint);
-    font-size: 12px;
-  }
 
   /* ---------- Responsive ---------- */
-  @media (max-width: 900px) {
+  @media (max-width: 980px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-devices { display: none; }
+    .payment-layout { grid-template-columns: 1fr; }
     .features-grid { grid-template-columns: repeat(2, 1fr); }
-    .apps-grid { grid-template-columns: repeat(2, 1fr); }
-    .payment-grid { grid-template-columns: repeat(2, 1fr); }
-    .footer-grid { grid-template-columns: 1fr 1fr; }
-    .hero h1 { font-size: 42px; }
   }
   @media (max-width: 640px) {
     .nav-links { display: none; }
     .menu-toggle { display: flex; }
-    .hero { padding: 56px 0 56px; }
-    .hero h1 { font-size: 34px; letter-spacing: -1px; }
+    .hero { padding: 40px 0 56px; }
+    .hero h1 { font-size: 36px; letter-spacing: -1px; }
     .hero p.lead { font-size: 16px; }
+    .hero-feature { padding: 4px 14px; }
     .features-grid { grid-template-columns: 1fr; }
-    .apps-grid { grid-template-columns: 1fr; }
-    .payment-grid { grid-template-columns: 1fr; }
-    .footer-grid { grid-template-columns: 1fr; gap: 28px; }
     .section-head h2 { font-size: 26px; }
-    .cta-box { padding: 44px 22px; }
-    .cta-box h2 { font-size: 24px; }
-    .hero-actions .btn, .cta-box .btn { width: 100%; }
+    .footer-row { flex-direction: column; align-items: flex-start; }
   }
 </style>
 </head>
@@ -618,6 +647,10 @@
     <path d="M7.5 10V7a3.5 3.5 0 0 1 7 0v3"/>
     <path d="M19.5 3.2 20.1 5l1.7.5-1.7.5-.6 1.8-.6-1.8L17.2 5.5l1.7-.5Z" fill="url(#iconGrad)" stroke="none"/>
   </symbol>
+  <!-- two loops crossing, for "always-on / stable" -->
+  <symbol id="i-infinity" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2 12c0-2.2 1.8-4 4-4 2.5 0 3.7 1.8 6 4 2.3 2.2 3.5 4 6 4 2.2 0 4-1.8 4-4s-1.8-4-4-4c-2.5 0-3.7 1.8-6 4-2.3 2.2-3.5 4-6 4-2.2 0-4-1.8-4-4Z"/>
+  </symbol>
   <symbol id="i-smartphone" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="6" y="2" width="12" height="20" rx="2.5"/>
     <path d="M11 18h2"/>
@@ -634,15 +667,42 @@
     <path d="m6 9 3 3-3 3"/>
     <path d="M12 15h6"/>
   </symbol>
-  <symbol id="i-puzzle" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M9 3h4a1 1 0 0 1 1 1v2.2a1.8 1.8 0 1 0 0 3.6V12a1 1 0 0 1-1 1h-2.2a1.8 1.8 0 1 0-3.6 0H5a1 1 0 0 1-1-1V9a1.8 1.8 0 1 0 0-3.6V4a1 1 0 0 1 1-1h2.2A1.8 1.8 0 1 0 9 3Z"/>
-    <path d="M14 13v2.2a1.8 1.8 0 1 1 3.6 0H20a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1h-2.8a1.8 1.8 0 1 1-3.6 0H12a1 1 0 0 1-1-1v-3h1a2 2 0 0 0 2-2Z"/>
+  <!-- simplified platform glyphs, for compatibility badges only (not brand marks) -->
+  <symbol id="i-android" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 11a6 6 0 0 1 12 0v5H6v-5Z"/>
+    <path d="M7 5.5 8.3 7.3M17 5.5l-1.3 1.8"/>
+    <path d="M4.3 11.5v4M19.7 11.5v4"/>
+    <path d="M8.5 18v2.3M15.5 18v2.3"/>
+    <circle cx="9.3" cy="9.3" r="0.6" fill="url(#iconGrad)" stroke="none"/>
+    <circle cx="14.7" cy="9.3" r="0.6" fill="url(#iconGrad)" stroke="none"/>
   </symbol>
-  <!-- kept as currentColor: this one sits on solid/gradient buttons, not the dark background, so it needs to match the button's text color rather than the brand gradient -->
+  <symbol id="i-apple" viewBox="0 0 24 24" fill="url(#iconGrad)" stroke="none">
+    <path d="M15.5 8.1c-.9 0-2.1.6-2.8.6-.7 0-1.7-.6-2.8-.6-2.2 0-4.4 1.8-4.4 5.2 0 3.6 2.5 7.8 4.3 7.8.8 0 1.2-.5 2.4-.5s1.5.5 2.4.5c1.7 0 3.2-3.1 3.9-4.9-2.4-1-2.7-4.6-.3-6-.9-1.3-2.3-2.1-2.7-2.1Z"/>
+    <path d="M13.6 6.8c.4-.6.8-1.5.6-2.4-.8.1-1.7.6-2.2 1.3-.4.5-.8 1.4-.6 2.2.9.1 1.8-.5 2.2-1.1Z"/>
+  </symbol>
+  <symbol id="i-windows" viewBox="0 0 24 24" fill="url(#iconGrad)" stroke="none">
+    <path d="M3 5.5 11 4.4V11.6H3V5.5Z"/>
+    <path d="M12.3 4.2 21 3v8.6h-8.7V4.2Z"/>
+    <path d="M3 12.6h8v7.1L3 18.6v-6Z"/>
+    <path d="M12.3 12.6H21V21l-8.7-1.2v-7.2Z"/>
+  </symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5v-13Z"/>
+    <path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5c.8 0 1.5-.7 1.5-1.5v-13Z"/>
+  </symbol>
+  <!-- kept as currentColor: these sit on solid/gradient buttons, so they need to match the button's text color rather than the brand gradient -->
   <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 3v12"/>
     <path d="m7 10 5 5 5-5"/>
     <path d="M4 21h16"/>
+  </symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 12h14"/>
+    <path d="m13 6 6 6-6 6"/>
+  </symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.6"/>
+    <path d="M5 20c0-3.6 3-6.2 7-6.2s7 2.6 7 6.2"/>
   </symbol>
   <symbol id="i-card" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="5" width="20" height="14" rx="2.5"/>
@@ -666,23 +726,31 @@
   <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="m12 3 2.6 5.8 6.2.6-4.7 4.2 1.4 6.2-5.5-3.3-5.5 3.3 1.4-6.2-4.7-4.2 6.2-.6L12 3Z"/>
   </symbol>
-  <symbol id="i-contactless" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="3" y="5" width="12" height="16" rx="2"/>
-    <path d="M18 9a5 5 0 0 1 0 8"/>
-    <path d="M21 6a9 9 0 0 1 0 14"/>
+  <symbol id="i-bank" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 10 12 4l9 6"/>
+    <path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/>
+    <path d="M3 20h18"/>
+  </symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24" fill="url(#iconGrad)" stroke="none">
+    <circle cx="6" cy="12" r="1.8"/>
+    <circle cx="12" cy="12" r="1.8"/>
+    <circle cx="18" cy="12" r="1.8"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 12.5 9 17.5 20 6.5"/>
   </symbol>
   <symbol id="i-telegram" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="m21 4-9 17-2-8-8-2 19-7Z"/>
     <path d="M10 13 21 4"/>
   </symbol>
-  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M4 4 20 20"/>
-    <path d="M20 4 4 20"/>
+  <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="5" width="18" height="14" rx="2"/>
+    <path d="m4 7 8 6 8-6"/>
   </symbol>
-  <symbol id="i-instagram" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="5"/>
-    <circle cx="12" cy="12" r="4"/>
-    <circle cx="17.3" cy="6.7" r="0.6" fill="url(#iconGrad)" stroke="none"/>
+  <symbol id="i-discord" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 5.5C6 6 4.5 8 4 11c-.6 3-.4 5.5.5 7.2 1 .4 2 .7 3 .8l.7-1.4c-.5-.2-1-.4-1.5-.7.2-.1.4-.3.6-.4 3 1.4 6.4 1.4 9.4 0 .2.1.4.3.6.4-.5.3-1 .5-1.5.7l.7 1.4c1-.1 2-.4 3-.8.9-2 1-4.5.5-7.2-.5-3-2-5-4-5.5-.3.5-.6 1-.8 1.5a13 13 0 0 0-5.2 0c-.2-.5-.5-1-.8-1.5Z"/>
+    <circle cx="9" cy="12.5" r="1.1" fill="url(#iconGrad)" stroke="none"/>
+    <circle cx="15" cy="12.5" r="1.1" fill="url(#iconGrad)" stroke="none"/>
   </symbol>
 </svg>
 
@@ -694,14 +762,12 @@
       <span>LumexVPN</span>
     </a>
     <nav class="nav-links">
-      <a href="#features">Возможности</a>
-      <a href="#apps">Приложения</a>
+      <a href="#features">Преимущества</a>
       <a href="#payment">Оплата</a>
-      <a href="/privacy/">Конфиденциальность</a>
+      <a href="#apps">Приложения</a>
+      <a href="#faq">FAQ</a>
     </nav>
-    <div class="nav-cta">
-      <a class="btn btn-primary btn-sm" href="#apps">Скачать</a>
-    </div>
+    <a class="btn btn-outline btn-pill btn-sm" href="#" aria-disabled="true"><svg width="15" height="15"><use href="#i-user"/></svg> Личный кабинет</a>
   </div>
 </header>
 
@@ -709,18 +775,47 @@
 
   <!-- Hero -->
   <section class="hero">
-    <div class="wrap" style="position:relative;z-index:1;">
-      <div class="eyebrow"><span class="dot"></span> VPN нового поколения</div>
-      <h1>Быстрый и безопасный<br />VPN без границ</h1>
-      <p class="lead">Поток света и энергии между вами и свободным интернетом. Военное шифрование, серверы по всему миру и ни одного лога.</p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="#apps"><svg width="16" height="16"><use href="#i-download"/></svg> Скачать приложение</a>
-        <a class="btn btn-outline" href="#payment">Способы оплаты</a>
-      </div>
-      <div class="chips">
-        <span class="chip"><svg><use href="#i-no-trace"/></svg> Без логов</span>
-        <span class="chip"><svg><use href="#i-lock"/></svg> Шифрование AES-256</span>
-        <span class="chip"><svg><use href="#i-mesh"/></svg> Серверы по всему миру</span>
+    <div class="wrap">
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow-plain"><span class="dot"></span> Стабильно · Быстро · Без ограничений</div>
+          <h1>Поток света<br />и энергии.<br /><span class="grad">Без границ.</span></h1>
+          <p class="lead">LumexVPN открывает вам свободный и безопасный доступ к интернету. Работает на всех ваших устройствах.</p>
+          <a class="btn btn-primary" href="#apps">Подключить LumexVPN <svg width="16" height="16"><use href="#i-arrow"/></svg></a>
+
+          <div class="hero-features">
+            <div class="hero-feature">
+              <div class="hero-feature-icon i-pink"><svg><use href="#i-streak"/></svg></div>
+              <span>Высокая<br />скорость</span>
+            </div>
+            <div class="hero-feature">
+              <div class="hero-feature-icon i-orange"><svg><use href="#i-infinity"/></svg></div>
+              <span>Стабильное<br />соединение</span>
+            </div>
+            <div class="hero-feature">
+              <div class="hero-feature-icon i-purple"><svg><use href="#i-lock"/></svg></div>
+              <span>Ваша<br />приватность</span>
+            </div>
+            <div class="hero-feature">
+              <div class="hero-feature-icon i-cyan"><svg><use href="#i-mesh"/></svg></div>
+              <span>Доступ без<br />ограничений</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-devices" aria-hidden="true">
+          <div class="device device-tablet">
+            <div class="device-screen"></div>
+          </div>
+          <div class="device device-laptop">
+            <div class="device-screen"></div>
+            <div class="laptop-base"></div>
+          </div>
+          <div class="device device-phone">
+            <div class="device-notch"></div>
+            <div class="device-screen"></div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -728,9 +823,9 @@
   <!-- Features -->
   <section class="features" id="features">
     <div class="wrap">
-      <div class="section-head">
-        <div class="section-tag">Возможности</div>
-        <h2>Почему LumexVPN</h2>
+      <div class="section-head centered">
+        <div class="eyebrow-plain"><span class="dot"></span> Почему выбирают нас</div>
+        <h2>Преимущества LumexVPN</h2>
         <p>Всё необходимое для приватного и стабильного соединения — без компромиссов.</p>
       </div>
       <div class="features-grid">
@@ -758,99 +853,145 @@
     </div>
   </section>
 
+  <!-- Payment -->
+  <section class="payment" id="payment">
+    <div class="wrap">
+      <div class="payment-layout">
+        <div>
+          <div class="section-head">
+            <div class="eyebrow-plain"><span class="dot"></span> Быстро · Удобно · Безопасно</div>
+            <h2>Выберите удобный способ оплаты</h2>
+            <p>Оплата занимает пару минут. После оплаты вы сразу получите доступ и сможете скачать приложение.</p>
+          </div>
+          <div class="payment-methods-grid">
+            <div class="pay-tile">
+              <div class="pay-icon i-pink"><svg><use href="#i-card"/></svg></div>
+              <h3>Банковская карта</h3>
+              <p>Visa, Mastercard, МИР</p>
+            </div>
+            <div class="pay-tile">
+              <div class="pay-icon i-orange"><svg><use href="#i-bolt"/></svg></div>
+              <h3>СБП</h3>
+              <p>Быстрая оплата через банк</p>
+            </div>
+            <div class="pay-tile">
+              <div class="pay-icon i-purple"><svg><use href="#i-star"/></svg></div>
+              <h3>Telegram Stars</h3>
+              <p>Удобная оплата через Telegram</p>
+            </div>
+            <div class="pay-tile">
+              <div class="pay-icon i-cyan"><svg><use href="#i-coins"/></svg></div>
+              <h3>Криптовалюта</h3>
+              <p>USDT, BTC, ETH и другие</p>
+            </div>
+            <div class="pay-tile">
+              <div class="pay-icon i-pink"><svg><use href="#i-wallet"/></svg></div>
+              <h3>ЮMoney</h3>
+              <p>Электронный кошелёк</p>
+            </div>
+            <div class="pay-tile">
+              <div class="pay-icon i-orange"><svg><use href="#i-bank"/></svg></div>
+              <h3>QIWI</h3>
+              <p>Популярный способ оплаты</p>
+            </div>
+            <div class="pay-tile">
+              <div class="pay-icon i-purple"><svg><use href="#i-mesh"/></svg></div>
+              <h3>PayPal</h3>
+              <p>Международные платежи</p>
+            </div>
+            <div class="pay-tile">
+              <div class="pay-icon i-cyan"><svg><use href="#i-dots"/></svg></div>
+              <h3>Другие способы</h3>
+              <p>И ещё несколько вариантов</p>
+            </div>
+          </div>
+          <p class="payment-note">Способы оплаты и ссылки на скачивание временные — появятся в ближайшее время.</p>
+        </div>
+
+        <div class="pricing-card">
+          <h3>Подписка на LumexVPN</h3>
+          <div class="price-row">
+            <span class="price-value">250 ₽</span>
+            <span class="price-period">/ месяц</span>
+          </div>
+          <ul class="pricing-list">
+            <li><svg><use href="#i-check"/></svg> Полный доступ ко всем серверам</li>
+            <li><svg><use href="#i-check"/></svg> Высокая скорость соединения</li>
+            <li><svg><use href="#i-check"/></svg> Поддержка всех устройств</li>
+            <li><svg><use href="#i-check"/></svg> Без логов и слежки</li>
+            <li><svg><use href="#i-check"/></svg> Можно отменить в любой момент</li>
+          </ul>
+          <a class="btn btn-primary btn-block" href="#" aria-disabled="true">Оплатить подписку <svg width="16" height="16"><use href="#i-arrow"/></svg></a>
+          <div class="pricing-note"><svg><use href="#i-lock"/></svg> Безопасная оплата. Ваши данные защищены.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Apps -->
   <section class="apps" id="apps">
     <div class="wrap">
-      <div class="section-head">
-        <div class="section-tag">Приложения</div>
+      <div class="section-head centered">
+        <div class="eyebrow-plain"><span class="dot"></span> На всех платформах</div>
         <h2>Скачайте LumexVPN</h2>
-        <p>Одна подписка — доступ на всех ваших устройствах.</p>
+        <p>Одно подключение — все ваши устройства. Установите приложение и начните пользоваться сразу после оплаты.</p>
       </div>
       <div class="apps-grid">
 
         <div class="app-card">
-          <div class="app-top">
-            <div class="app-icon i-pink"><svg><use href="#i-smartphone"/></svg></div>
-            <div class="app-meta">
-              <h3>Android</h3>
-              <span>APK · Google Play</span>
-            </div>
+          <div class="app-icon i-pink"><svg><use href="#i-android"/></svg></div>
+          <div class="app-meta">
+            <h3>Android</h3>
+            <span>Смартфоны и планшеты</span>
           </div>
-          <p class="app-desc">Прямой APK-файл или установка через Google Play.</p>
           <div class="app-actions">
-            <a class="btn btn-card btn-sm" href="#" aria-disabled="true">Скачать APK</a>
-            <a class="btn btn-card btn-sm" href="#" aria-disabled="true">Google Play</a>
+            <a class="btn btn-card btn-sm" href="#" aria-disabled="true"><svg width="15" height="15"><use href="#i-download"/></svg> Скачать APK</a>
+            <a class="btn btn-card btn-sm" href="#" aria-disabled="true"><svg width="15" height="15"><use href="#i-download"/></svg> Google Play</a>
           </div>
         </div>
 
         <div class="app-card">
-          <div class="app-top">
-            <div class="app-icon i-orange"><svg><use href="#i-smartphone"/></svg></div>
-            <div class="app-meta">
-              <h3>iOS</h3>
-              <span>App Store</span>
-            </div>
+          <div class="app-icon i-orange"><svg><use href="#i-apple"/></svg></div>
+          <div class="app-meta">
+            <h3>iOS</h3>
+            <span>iPhone и iPad</span>
           </div>
-          <p class="app-desc">Нативное приложение для iPhone и iPad.</p>
           <div class="app-actions">
-            <a class="btn btn-card btn-sm" href="#" aria-disabled="true">App Store</a>
+            <a class="btn btn-card btn-sm" href="#" aria-disabled="true"><svg width="15" height="15"><use href="#i-download"/></svg> App Store</a>
           </div>
         </div>
 
         <div class="app-card">
-          <div class="app-top">
-            <div class="app-icon i-purple"><svg><use href="#i-monitor"/></svg></div>
-            <div class="app-meta">
-              <h3>Windows</h3>
-              <span>.exe</span>
-            </div>
+          <div class="app-icon i-purple"><svg><use href="#i-windows"/></svg></div>
+          <div class="app-meta">
+            <h3>Windows</h3>
+            <span>ПК и ноутбуки</span>
           </div>
-          <p class="app-desc">Настольное приложение для Windows 10/11.</p>
           <div class="app-actions">
-            <a class="btn btn-card btn-sm" href="#" aria-disabled="true">Скачать .exe</a>
+            <a class="btn btn-card btn-sm" href="#" aria-disabled="true"><svg width="15" height="15"><use href="#i-download"/></svg> Скачать .exe</a>
           </div>
         </div>
 
         <div class="app-card">
-          <div class="app-top">
-            <div class="app-icon i-cyan"><svg><use href="#i-monitor"/></svg></div>
-            <div class="app-meta">
-              <h3>macOS</h3>
-              <span>.dmg</span>
-            </div>
+          <div class="app-icon i-cyan"><svg><use href="#i-apple"/></svg></div>
+          <div class="app-meta">
+            <h3>macOS</h3>
+            <span>Компьютеры Mac</span>
           </div>
-          <p class="app-desc">Нативное приложение для Mac на Intel и Apple Silicon.</p>
           <div class="app-actions">
-            <a class="btn btn-card btn-sm" href="#" aria-disabled="true">Скачать .dmg</a>
+            <a class="btn btn-card btn-sm" href="#" aria-disabled="true"><svg width="15" height="15"><use href="#i-download"/></svg> Скачать</a>
           </div>
         </div>
 
         <div class="app-card">
-          <div class="app-top">
-            <div class="app-icon i-pink"><svg><use href="#i-terminal"/></svg></div>
-            <div class="app-meta">
-              <h3>Linux</h3>
-              <span>.AppImage · .deb</span>
-            </div>
+          <div class="app-icon i-pink"><svg><use href="#i-terminal"/></svg></div>
+          <div class="app-meta">
+            <h3>Linux</h3>
+            <span>Все дистрибутивы</span>
           </div>
-          <p class="app-desc">Сборки для основных дистрибутивов Linux.</p>
           <div class="app-actions">
-            <a class="btn btn-card btn-sm" href="#" aria-disabled="true">Скачать</a>
-          </div>
-        </div>
-
-        <div class="app-card">
-          <div class="app-top">
-            <div class="app-icon i-orange"><svg><use href="#i-puzzle"/></svg></div>
-            <div class="app-meta">
-              <h3>Расширение</h3>
-              <span>Chrome · Firefox</span>
-            </div>
-            <span class="badge-soon">Скоро</span>
-          </div>
-          <p class="app-desc">Быстрое подключение прямо из браузера.</p>
-          <div class="app-actions">
-            <a class="btn btn-card btn-sm" href="#" aria-disabled="true">Подробнее</a>
+            <a class="btn btn-card btn-sm" href="#" aria-disabled="true"><svg width="15" height="15"><use href="#i-download"/></svg> Скачать</a>
+            <a class="btn btn-card btn-sm" href="#" aria-disabled="true"><svg width="15" height="15"><use href="#i-book"/></svg> Инструкция</a>
           </div>
         </div>
 
@@ -858,84 +999,35 @@
     </div>
   </section>
 
-  <!-- Payment -->
-  <section class="payment" id="payment">
+  <!-- FAQ -->
+  <section class="faq" id="faq">
     <div class="wrap">
-      <div class="section-head">
-        <div class="section-tag">Оплата</div>
-        <h2>Удобные способы оплаты</h2>
-        <p>Выбирайте то, что вам подходит — оплата занимает меньше минуты.</p>
+      <div class="section-head centered">
+        <div class="eyebrow-plain"><span class="dot"></span> Остались вопросы</div>
+        <h2>Частые вопросы</h2>
+        <p>Если не нашли ответ здесь — напишите в поддержку, ответим быстро.</p>
       </div>
-      <div class="payment-grid">
-
-        <div class="pay-card">
-          <div class="pay-icon i-pink"><svg><use href="#i-card"/></svg></div>
-          <div class="pay-info">
-            <h3>Банковские карты</h3>
-            <p>Visa, Mastercard, МИР</p>
-          </div>
-          <a class="btn btn-outline btn-sm" href="#" aria-disabled="true">Оплатить</a>
-        </div>
-
-        <div class="pay-card">
-          <div class="pay-icon i-orange"><svg><use href="#i-bolt"/></svg></div>
-          <div class="pay-info">
-            <h3>СБП</h3>
-            <p>Система быстрых платежей</p>
-          </div>
-          <a class="btn btn-outline btn-sm" href="#" aria-disabled="true">Оплатить</a>
-        </div>
-
-        <div class="pay-card">
-          <div class="pay-icon i-purple"><svg><use href="#i-wallet"/></svg></div>
-          <div class="pay-info">
-            <h3>ЮMoney</h3>
-            <p>Электронный кошелёк</p>
-          </div>
-          <a class="btn btn-outline btn-sm" href="#" aria-disabled="true">Оплатить</a>
-        </div>
-
-        <div class="pay-card">
-          <div class="pay-icon i-cyan"><svg><use href="#i-coins"/></svg></div>
-          <div class="pay-info">
-            <h3>Криптовалюта</h3>
-            <p>USDT, BTC, TON</p>
-          </div>
-          <a class="btn btn-outline btn-sm" href="#" aria-disabled="true">Оплатить</a>
-        </div>
-
-        <div class="pay-card">
-          <div class="pay-icon i-pink"><svg><use href="#i-star"/></svg></div>
-          <div class="pay-info">
-            <h3>Telegram Stars</h3>
-            <p>Оплата прямо в Telegram</p>
-          </div>
-          <a class="btn btn-outline btn-sm" href="#" aria-disabled="true">Оплатить</a>
-        </div>
-
-        <div class="pay-card">
-          <div class="pay-icon i-orange"><svg><use href="#i-contactless"/></svg></div>
-          <div class="pay-info">
-            <h3>Apple Pay / Google Pay</h3>
-            <p>Оплата в один тап</p>
-          </div>
-          <a class="btn btn-outline btn-sm" href="#" aria-disabled="true">Оплатить</a>
-        </div>
-
-      </div>
-      <div class="payment-note">Способы оплаты и ссылки на скачивание временные — появятся в ближайшее время.</div>
-    </div>
-  </section>
-
-  <!-- CTA -->
-  <section class="cta">
-    <div class="wrap">
-      <div class="cta-box">
-        <div style="position:relative;z-index:1;">
-          <h2>Готовы обезопасить свой интернет?</h2>
-          <p>Скачайте LumexVPN и подключитесь за пару минут.</p>
-          <a class="btn btn-primary" href="#apps"><svg width="16" height="16"><use href="#i-download"/></svg> Скачать LumexVPN</a>
-        </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>Как начать пользоваться LumexVPN?</summary>
+          <p>Выберите способ оплаты, оформите подписку и скачайте приложение для своего устройства — доступ откроется сразу после оплаты.</p>
+        </details>
+        <details class="faq-item">
+          <summary>На скольких устройствах можно использовать одну подписку?</summary>
+          <p>Одна подписка LumexVPN работает на всех ваших устройствах — телефоне, компьютере и планшете — одновременно.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Собираете ли вы логи активности?</summary>
+          <p>Нет. Мы не храним историю посещённых сайтов и не передаём данные о вашей активности третьим лицам.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Как отменить подписку?</summary>
+          <p>Подписку можно отменить в любой момент в личном кабинете — доступ сохранится до конца оплаченного периода.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Какие способы оплаты доступны?</summary>
+          <p>Банковские карты, СБП, Telegram Stars, криптовалюта, ЮMoney, QIWI, PayPal и ещё несколько вариантов — подробнее в разделе «Оплата».</p>
+        </details>
       </div>
     </div>
   </section>
@@ -943,47 +1035,25 @@
 </main>
 
 <footer>
-  <div class="wrap">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <a class="brand" href="/">
-          <img src="/assets/icon.png" alt="LumexVPN" />
-          <span>LumexVPN</span>
-        </a>
-        <p>Поток света и энергии. Без границ. Быстрый и безопасный VPN для любых устройств.</p>
-        <div class="footer-social">
-          <a href="https://t.me/lumexconnect_bot" aria-label="Telegram"><svg><use href="#i-telegram"/></svg></a>
-          <a href="#" aria-disabled="true" aria-label="X (Twitter)"><svg><use href="#i-x"/></svg></a>
-          <a href="#" aria-disabled="true" aria-label="Instagram"><svg><use href="#i-instagram"/></svg></a>
-        </div>
-      </div>
-      <div class="footer-col">
-        <h4>Продукт</h4>
-        <ul>
-          <li><a href="#features">Возможности</a></li>
-          <li><a href="#apps">Приложения</a></li>
-          <li><a href="#payment">Оплата</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Приложения</h4>
-        <ul>
-          <li><a href="#apps">Android / iOS</a></li>
-          <li><a href="#apps">Windows / macOS</a></li>
-          <li><a href="#apps">Linux</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Поддержка</h4>
-        <ul>
-          <li><a href="https://t.me/lumexconnect_bot">Написать в Telegram</a></li>
-          <li><a href="/privacy/">Политика конфиденциальности</a></li>
-        </ul>
-      </div>
+  <div class="wrap footer-row">
+    <div class="footer-brand">
+      <a class="brand" href="/">
+        <img src="/assets/icon.png" alt="LumexVPN" />
+        <span>LumexVPN</span>
+      </a>
+      <span class="tagline">Свет. Знание. Свобода. · © 2026 LumexVPN</span>
     </div>
-    <div class="footer-bottom">
-      <span>&copy; 2026 LumexVPN. Все права защищены.</span>
-      <span>Сделано с потоком света ✨</span>
+    <nav class="footer-links">
+      <a href="/">О проекте</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://t.me/lumexconnect_bot">Поддержка</a>
+      <a href="/privacy/">Политика конфиденциальности</a>
+      <a href="#" aria-disabled="true">Условия использования</a>
+    </nav>
+    <div class="footer-social">
+      <a href="https://t.me/lumexconnect_bot" aria-label="Telegram"><svg><use href="#i-telegram"/></svg></a>
+      <a href="mailto:support@lumexvpn.com" aria-label="Email"><svg><use href="#i-mail"/></svg></a>
+      <a href="#" aria-disabled="true" aria-label="Discord"><svg><use href="#i-discord"/></svg></a>
     </div>
   </div>
 </footer>
@@ -1033,12 +1103,13 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  // Kept clear of the centered hero copy: hugging the left edge on desktop,
-  // tucked above the heading on narrow screens where text runs edge to edge.
+  // Hero copy is left-aligned starting near the page edge, so the hot core
+  // sits in the gap just below the sticky header (72px) instead of beside
+  // or behind the text, wherever the viewport height puts that text.
   function corePos(t) {
     return {
-      x: w * (isSmall ? 0.22 : 0.12) + Math.sin(t * 0.6) * w * 0.02,
-      y: h * (isSmall ? 0.10 : 0.32) + Math.cos(t * 0.5) * h * 0.02
+      x: w * (isSmall ? 0.16 : 0.09) + Math.sin(t * 0.6) * w * 0.02,
+      y: 100 + Math.cos(t * 0.5) * 16
     };
   }
 
