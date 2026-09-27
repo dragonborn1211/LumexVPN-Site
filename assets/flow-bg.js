@@ -77,7 +77,7 @@
   var VS = [
     'precision highp float;',
     'attribute vec2 a_c; attribute vec2 a_n; attribute vec4 a_p; attribute vec4 a_col; attribute vec4 a_f; attribute vec4 a_g;',
-    'uniform vec2 u_view; uniform float u_scroll; uniform float u_time; uniform float u_dpr; uniform float u_flow;',
+    'uniform vec2 u_view; uniform float u_scroll; uniform float u_time; uniform float u_dpr; uniform float u_flow; uniform vec3 u_calm;',
     'varying vec4 v_col; varying vec2 v_uv; varying float v_kind;',
     'void main() {',
     '  float kind = a_g.y;',
@@ -92,8 +92,8 @@
     '  if (hw < minHw) { alpha *= hw / minHw; hw = minHw; }',
     '  if (kind < 1.5) {',
     // a_p = (spread, arc length, side, curvature); a_f = (bundle offset, sway, sway frequency, half-width)
-    '    float breathe = 1.0 + 0.08 * sin(t * 0.33 + a_g.w * 6.2832);',
-    '    float sway = a_f.y * sin(a_p.y * a_f.z + t * a_g.z + a_g.x);',
+    '    float breathe = 1.0 + 0.04 * sin(t * 0.33 + a_g.w * 6.2832);',
+    '    float sway = 0.5 * a_f.y * sin(a_p.y * a_f.z + t * a_g.z + a_g.x);',
     '    float off = a_p.x * (a_f.x + sway) * breathe + a_p.z * hw;',
     // a_p.w = signed curvature of the centre-line. Pushing a vertex past the centre of a tight
     // turn folds the strip over itself and draws "spokes"; compress the offset so it approaches
@@ -109,17 +109,17 @@
     // of one stream share a seed, so they surge together; every fibre carries its own faster comets.
     // u_flow scales speed, spacing and tail with the size of the composition.
     '    float spd = (kind > 0.5 ? 200.0 + 105.0 * fract(a_g.w * 13.7) : 220.0 + 145.0 * fract(a_g.w * 13.7)) * u_flow;',
-    '    float per = (kind > 0.5 ? 1500.0 : 650.0 + 650.0 * fract(a_g.w * 5.3)) * u_flow;',
+    '    float per = (kind > 0.5 ? 2400.0 : 1100.0 + 900.0 * fract(a_g.w * 5.3)) * u_flow;',
     '    float behind = fract((t * spd - a_p.y) / per + a_g.w) * per;',
     '    float comet = exp(-behind / ((kind > 0.5 ? 260.0 : 150.0) * u_flow)) * smoothstep(0.0, 14.0 * u_flow, behind);',
     // only fibres and the narrow glow lines carry comets: on the wide haze a travelling flash reads as a pale slab
     '    comet *= kind > 0.5 ? clamp(1.0 - (hw - 8.0) / 24.0, 0.0, 1.0) : 1.0;',
     '    if (kind < 0.5) {',
     '      float seg = sin(a_p.y * (0.0028 + 0.0024 * fract(a_g.w * 7.13)) + a_g.x * 3.1 + t * 0.15);',
-    '      alpha *= max(smoothstep(-0.45, 0.5, seg), comet * 0.7);',
+    '      alpha *= max(smoothstep(-0.45, 0.5, seg), comet * 0.4);',
     '    }',
-    '    alpha *= 1.0 + comet * (kind > 0.5 ? 2.2 : 3.0);',
-    '    col = mix(col, vec3(1.0, 0.97, 0.94), comet * 0.5);',
+    '    alpha *= 1.0 + comet * (kind > 0.5 ? 0.5 : 0.8);',
+    '    col = mix(col, vec3(1.0, 0.97, 0.94), comet * 0.2);',
     '  } else {',
     '    float tw = kind > 2.5 ? 0.25 + 0.75 * (0.5 + 0.5 * sin(t * a_g.z + a_g.x)) : 0.86 + 0.14 * sin(t * 0.6 + a_g.x);',
     '    alpha *= tw;',
@@ -128,6 +128,8 @@
     '  }',
     '  vec2 clip = (pos - vec2(0.0, u_scroll)) / u_view * 2.0 - 1.0;',
     '  gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);',
+    // the first screen shows the streams at full strength; further down they settle into the background
+    '  alpha *= mix(1.0, u_calm.z, smoothstep(u_calm.x, u_calm.y, a_c.y));',
     '  v_col = vec4(col, alpha);',
     '  v_uv = kind < 1.5 ? vec2(a_p.z, 0.0) : a_p.zw;',
     '  v_kind = kind;',
@@ -361,7 +363,8 @@
   var FLOATS = 20;
   var LAYOUT = [[2, 0], [2, 2], [4, 4], [4, 8], [4, 12], [4, 16]];
   var vbo = gl.createBuffer();
-  var U = uniforms(prog, ['u_view', 'u_scroll', 'u_time', 'u_dpr', 'u_flow']);
+  var U = uniforms(prog, ['u_view', 'u_scroll', 'u_time', 'u_dpr', 'u_flow', 'u_calm']);
+  var CALM_LEVEL = 0.38; // stream strength below the first screen
 
   // Space is optional: if any of its programs fails, the streams still run on the plain dark colour.
   var nebGen = link(FULL_VS, NEB_GEN_FS, ['a_v']);
@@ -532,8 +535,8 @@
     // soft haze, wide glow, tight glow, white-hot core
     line(S, { kind: 1, b: 0, amp: 0.03, k: 0.004, hw: 96 * gs, a: 0.14, spd: 0.3, ph: rnd() * TAU, seed: seed, mixEdge: 0.4, mixWhite: 0, hotWhite: 0.1 }, edge);
     line(S, { kind: 1, b: 0, amp: 0.03, k: 0.005, hw: 36 * gs, a: 0.36, spd: 0.35, ph: rnd() * TAU, seed: seed, mixEdge: 0.05, mixWhite: 0, hotWhite: 0.15 }, edge);
-    line(S, { kind: 1, b: 0, amp: 0.02, k: 0.006, hw: 9 * gs, a: 0.66, spd: 0.4, ph: rnd() * TAU, seed: seed, mixEdge: 0, mixWhite: 0, hotWhite: 0.35 }, edge);
-    line(S, { kind: 1, b: 0, amp: 0.015, k: 0.006, hw: Math.max(1.4, 2.3 * gs), a: 1, spd: 0.4, ph: rnd() * TAU, seed: seed, mixEdge: 0, mixWhite: 0.1, hotWhite: 0.75 }, edge);
+    line(S, { kind: 1, b: 0, amp: 0.02, k: 0.006, hw: 9 * gs, a: 0.66, spd: 0.4, ph: rnd() * TAU, seed: seed, mixEdge: 0, mixWhite: 0, hotWhite: 0.2 }, edge);
+    line(S, { kind: 1, b: 0, amp: 0.015, k: 0.006, hw: Math.max(1.4, 2.3 * gs), a: 0.85, spd: 0.4, ph: rnd() * TAU, seed: seed, mixEdge: 0, mixWhite: 0, hotWhite: 0.3 }, edge);
     for (var f = 0; f < fibres; f++) {
       var r = rnd() * 2 - 1;
       var b = (r < 0 ? -1 : 1) * Math.pow(Math.abs(r), 1.2) * 1.35;
@@ -545,7 +548,7 @@
         hw: 0.5 + 0.45 * rnd(),
         a: (0.9 * Math.pow(1 - ab, 1.1) + 0.2) * (0.6 + 0.4 * rnd()) * (small ? 1.15 : 1),
         spd: 0.2 + 0.55 * rnd(), ph: rnd() * TAU, seed: rnd(),
-        mixEdge: ab * 0.75, mixWhite: 0, hotWhite: 0.3 * (1 - ab)
+        mixEdge: ab * 0.75, mixWhite: 0, hotWhite: 0.15 * (1 - ab)
       }, edge);
     }
     var sparks = Math.floor(S.L / (small ? 16 : 12));
@@ -573,9 +576,9 @@
 
   function emitNode(nd, map, rnd) {
     var x = map.x(nd[0]), y = map.y(nd[1]), k = nd[2];
-    quad(x, y, 1, 0, 170 * map.sx, COL.pink, 0.2 * k, 0, rnd() * 6.2832, 2, 0, rnd());
-    quad(x, y, 1, 0, 70 * map.sx, COL.amber, 0.4 * k, 0, rnd() * 6.2832, 2, 0, rnd());
-    quad(x, y, 1, 0, 20 * map.sx, COL.white, 0.9 * k, 0, rnd() * 6.2832, 2, 0, rnd());
+    quad(x, y, 1, 0, 150 * map.sx, COL.pink, 0.1 * k, 0, rnd() * 6.2832, 2, 0, rnd());
+    quad(x, y, 1, 0, 60 * map.sx, COL.amber, 0.2 * k, 0, rnd() * 6.2832, 2, 0, rnd());
+    quad(x, y, 1, 0, 16 * map.sx, COL.white, 0.45 * k, 0, rnd() * 6.2832, 2, 0, rnd());
   }
 
   // ---------- deep space ----------
@@ -781,6 +784,7 @@
     gl.uniform1f(U.u_time, t);
     gl.uniform1f(U.u_dpr, dpr);
     gl.uniform1f(U.u_flow, flowScale);
+    gl.uniform3f(U.u_calm, ch * 0.8, ch * 1.5, CALM_LEVEL);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, count);
     if (!shown) { shown = true; canvas.classList.add('on'); }
     if (running) raf = requestAnimationFrame(draw);
