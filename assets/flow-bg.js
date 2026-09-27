@@ -189,22 +189,25 @@
     '  vec2 r = p + 1.5 * q;',
     '  float gas = fbm(r + vec2(3.1, 5.4)) * 0.5 + 0.5;',
     '  float big = fbm(p * 0.28 + vec2(21.0, 4.0)) * 0.5 + 0.5;', // large scale: rich and empty parts of the sky
-    '  float region = smoothstep(0.3, 0.72, big);',
-    '  float glow = smoothstep(0.3, 0.8, gas) * region;',
-    '  float core = pow(smoothstep(0.5, 0.92, gas), 2.0) * region;',
-    '  float hue = fbm(p * 0.4 + q * 0.8 + vec2(-4.0, 7.0)) * 0.5 + 0.5;',
-    '  vec3 c = mix(vec3(0.12, 0.30, 0.90), vec3(0.46, 0.20, 0.92), smoothstep(0.36, 0.56, hue));',
-    '  c = mix(c, vec3(0.88, 0.18, 0.60), smoothstep(0.58, 0.78, hue));',
-    '  c = mix(vec3(0.08, 0.55, 0.85), c, smoothstep(0.2, 0.36, hue));',
-    '  c = mix(c, vec3(1.0, 0.55, 0.40), core * smoothstep(0.6, 0.85, hue) * 0.6);',
+    '  float region = smoothstep(0.2, 0.62, big);',
+    '  float glow = smoothstep(0.28, 0.8, gas) * region;',
+    '  float core = pow(smoothstep(0.48, 0.9, gas), 2.0) * region;',
+    // every cloud has its own colour family (blue-teal, violet, magenta, hydrogen red); outskirts turn cooler
+    '  float fam = clamp(fbm(p * 0.5 + q * 0.4 + vec2(-4.0, 7.0)) * 1.2 + 0.5, 0.0, 1.0);',
+    '  vec3 A = mix(vec3(0.08, 0.50, 1.00), vec3(0.58, 0.22, 1.00), smoothstep(0.3, 0.42, fam));',
+    '  A = mix(A, vec3(1.00, 0.18, 0.72), smoothstep(0.48, 0.6, fam));',
+    '  A = mix(A, vec3(1.00, 0.28, 0.34), smoothstep(0.68, 0.8, fam));',
+    '  vec3 edge = mix(vec3(0.10, 0.42, 1.00), vec3(0.34, 0.26, 1.00), smoothstep(0.35, 0.65, fam));',
+    '  vec3 c = mix(edge, A, smoothstep(0.35, 0.72, gas));',
+    '  c = mix(c, c * 0.5 + 0.5, core * core * 0.5);', // the densest knots glow paler, in their own hue
     // gas glow plus the faint diffuse light of unresolved stars
-    '  vec3 em = c * (glow * 0.5 + core * 1.1) + vec3(0.30, 0.34, 0.62) * 0.12 * smoothstep(0.25, 0.8, big);',
+    '  vec3 em = c * (glow * 0.55 + core * 1.2) + vec3(0.30, 0.34, 0.62) * 0.12 * smoothstep(0.25, 0.8, big);',
     // dust: broad dark clouds with softer filaments, only visible against the light behind it
     '  float clouds = smoothstep(0.5, 0.72, fbm(r * 0.7 + vec2(40.0, 13.0)) * 0.5 + 0.5);',
     '  float lanes = smoothstep(0.62, 0.95, ridged(r * 1.2 + vec2(11.0, 3.0)));',
     '  float dust = min(1.0, clouds * 0.9 + lanes * 0.55) * smoothstep(0.03, 0.3, dot(em, vec3(0.3, 0.45, 0.25)));',
     '  em *= 1.0 - 0.9 * dust;',
-    '  gl_FragColor = vec4(min(em, 1.0), dust);',
+    '  gl_FragColor = vec4(min(em * 0.5, 1.0), dust);',
     '}'
   ].join('\n');
 
@@ -231,52 +234,94 @@
     '}'
   ].join('\n');
 
-  // Stars and galaxies. a_pos = (x, y, corner); a_st = (radius, brightness, parallax, wrap height);
-  // a_x = (type 0 star / 1 star with diffraction spikes / 2 galaxy, p1, p2, dust extinction), where
-  // p1, p2 = twinkle depth and speed for stars, axis ratio and angle for galaxies.
+  // Stars, galaxies and supernovae, one quad each. a_pos = (x, y, corner); a_st = (radius, brightness,
+  // parallax, wrap height); a_col = (rgb, w); a_x = (type, p1, p2, dust extinction). By type:
+  //   0 star, 1 star with diffraction spikes — p1, p2 = twinkle depth and speed, w = twinkle phase
+  //   2 elliptical galaxy, 4 spiral galaxy   — p1, p2 = axis ratio and angle, w = spin (rad/s)
+  //   3 supernova                            — p1 = seed, p2 = period (s), w = time offset
   var STAR_VS = [
     'precision highp float;',
     'attribute vec4 a_pos; attribute vec4 a_st; attribute vec4 a_col; attribute vec4 a_x;',
     'uniform vec2 u_view; uniform float u_scroll; uniform float u_time; uniform float u_dpr; uniform float u_nebScroll; uniform vec2 u_world;',
-    'varying vec2 v_q; varying vec4 v_col; varying vec2 v_nuv; varying vec2 v_k;',
+    'varying vec2 v_q; varying vec4 v_col; varying vec2 v_nuv; varying vec3 v_k;',
     'void main() {',
-    '  float r = a_st.x, a = a_st.y, type = a_x.x;',
+    '  float r = a_st.x, a = a_st.y, type = a_x.x, age = 0.0, reach = 4.5;',
+    '  vec2 base = a_pos.xy;',
+    '  if (type < 1.5) {',
     // under ~1.4 device px a star shimmers while scrolling: keep the size, dim it instead
-    '  float minR = 1.4 / u_dpr;',
-    '  if (r < minR) { a *= (r / minR) * (r / minR); r = minR; }',
-    '  vec2 q = a_pos.zw * (type > 0.5 && type < 1.5 ? 16.0 : 4.5);',
+    '    float minR = 1.4 / u_dpr;',
+    '    if (r < minR) { a *= (r / minR) * (r / minR); r = minR; }',
+    '    if (type > 0.5) reach = 16.0;',
+    // two detuned waves make the twinkle irregular; deep for the few blinking stars
+    '    float tw = 0.6 * sin(u_time * a_x.z + a_col.w) + 0.4 * sin(u_time * a_x.z * 2.31 + a_col.w * 3.7);',
+    '    a *= max(0.0, 1.0 + a_x.y * tw);',
+    '  } else if (type > 2.5 && type < 3.5) {',
+    // a supernova flares once per cycle at a new random spot, then fades behind an expanding shell
+    '    float cyc = (u_time + a_col.w) / a_x.z;',
+    '    float idx = floor(cyc);',
+    '    age = fract(cyc) * a_x.z;',
+    '    vec2 h = fract(sin(vec2(idx * 12.9898 + a_x.y * 78.233, idx * 39.346 + a_x.y * 11.135)) * 43758.5453);',
+    '    base = vec2(h.x * u_view.x, h.y * a_st.w - 48.0);',
+    '    a *= smoothstep(0.0, 0.18, age) * exp(-age / 1.3);',
+    '    reach = age < 5.5 ? 46.0 : 0.0;', // collapsed between flares: costs nothing
+    '  } else if (type > 3.5) {',
+    '    reach = 1.15;',
+    '    age = u_time * a_col.w;', // slow rotation of the arms
+    '  }',
+    '  vec2 q = a_pos.zw * reach;',
     '  vec2 off = q * r;',
-    '  if (type > 1.5) { float c = cos(a_x.z), s = sin(a_x.z); off = mat2(c, s, -s, c) * vec2(off.x, off.y * a_x.y); }',
-    '  else a *= 1.0 + a_x.y * sin(u_time * a_x.z + a_col.w);',
+    // galaxies are discs seen at an angle: squash, then turn
+    '  if (type > 1.5 && (type < 2.5 || type > 3.5)) { float c = cos(a_x.z), sn = sin(a_x.z); off = mat2(c, sn, -sn, c) * vec2(off.x, off.y * a_x.y); }',
     // the field wraps around, so it never runs out if the page grows after it was built
-    '  float y = mod(a_pos.y - u_scroll * a_st.z + 48.0, a_st.w) - 48.0;',
-    '  vec2 s = vec2(a_pos.x, y) + off;',
+    '  float y = mod(base.y - u_scroll * a_st.z + 48.0, a_st.w) - 48.0;',
+    '  vec2 s = vec2(base.x, y) + off;',
     '  v_nuv = (s + vec2(0.0, u_nebScroll)) / u_world;',
     '  vec2 clip = s / u_view * 2.0 - 1.0;',
     '  gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);',
-    '  v_q = q; v_col = vec4(a_col.rgb, a); v_k = vec2(type, a_x.w);',
+    '  v_q = q; v_col = vec4(a_col.rgb, a); v_k = vec3(type, a_x.w, age);',
     '}'
   ].join('\n');
 
   var STAR_FS = HP + MIRROR + [
-    'varying vec2 v_q; varying vec4 v_col; varying vec2 v_nuv; varying vec2 v_k;',
+    'varying vec2 v_q; varying vec4 v_col; varying vec2 v_nuv; varying vec3 v_k;',
     'uniform sampler2D u_tex; uniform float u_hasNeb;',
+    'float spikes(vec2 q, float len, float sharp) {',
+    '  q = abs(q);',
+    '  return exp(-sharp * q.y) * pow(max(0.0, 1.0 - q.x / len), 3.0) + exp(-sharp * q.x) * pow(max(0.0, 1.0 - q.y / len), 3.0);',
+    '}',
     'void main() {',
-    '  float d2 = dot(v_q, v_q), a;',
-    '  if (v_k.x > 1.5) { a = 0.9 * exp(-6.0 * d2) + 0.45 * exp(-2.4 * sqrt(d2)); }', // bulge + exponential disc
-    '  else {',
-    '    a = exp(-2.0 * d2) + 0.1 * exp(-1.8 * sqrt(d2));',
-    '    if (v_k.x > 0.5) { vec2 q = abs(v_q);',
-    '      a += 0.45 * (exp(-2.6 * q.y) * pow(max(0.0, 1.0 - q.x / 16.0), 3.0) + exp(-2.6 * q.x) * pow(max(0.0, 1.0 - q.y / 16.0), 3.0)); }',
+    '  float d2 = dot(v_q, v_q), d = sqrt(d2), a;',
+    '  vec3 col = v_col.rgb;',
+    '  if (v_k.x < 1.5) {',
+    '    a = exp(-2.0 * d2) + 0.1 * exp(-1.8 * d);',
+    '    if (v_k.x > 0.5) a += 0.45 * spikes(v_q, 16.0, 2.6);',
+    '  } else if (v_k.x < 2.5) {',
+    '    a = 0.9 * exp(-6.0 * d2) + 0.45 * exp(-2.4 * d);', // bulge + exponential disc
+    '  } else if (v_k.x < 3.5) {',
+    '    float age = v_k.z;',
+    '    float core = exp(-1.5 * d2);',
+    '    float rays = 0.8 * exp(-age / 0.9) * spikes(v_q, 40.0, 2.0);',
+    '    float R = 3.0 + 7.0 * age, w = 2.5 + 2.2 * age;',
+    '    float shell = 0.16 * exp(-age / 2.0) * exp(-(d - R) * (d - R) / (w * w));',
+    '    a = core + 0.6 * exp(-0.25 * d - age / 0.6) + 0.2 * exp(-0.3 * d) + rays + shell;',
+    '    col = mix(col, vec3(1.0), clamp(core * 1.5 + rays, 0.0, 1.0) * 0.8);',
+    '  } else {',
+    // spiral galaxy: warm bulge, bluish two-armed disc, pink star-forming regions along the arms
+    '    float arm = pow(0.5 + 0.5 * cos(2.0 * atan(v_q.y, v_q.x + 1e-4) - 3.2 * log(d + 0.03) - v_k.z), 2.0);',
+    '    float disc = exp(-3.2 * d) * (1.0 - smoothstep(0.75, 1.1, d));',
+    '    float lit = disc * (0.4 + 1.4 * arm * smoothstep(0.06, 0.3, d));',
+    '    col = vec3(1.0, 0.86, 0.66) * (exp(-60.0 * d2) + 0.35 * exp(-12.0 * d))',
+    '        + lit * mix(vec3(0.55, 0.72, 1.0), vec3(1.0, 0.45, 0.75), pow(arm, 3.0) * smoothstep(0.25, 0.55, d) * 0.7);',
+    '    a = 1.0;',
     '  }',
-    // far stars live inside the nebula: hidden by its dust lanes, crowded inside its glow
-    '  if (u_hasNeb > 0.5) {',
+    // far objects live inside the nebula: hidden by its dust lanes, crowded inside its glow
+    '  if (u_hasNeb > 0.5 && v_k.y > 0.0) {',
     '    vec4 n = texture2D(u_tex, mirrorY(v_nuv));',
     '    float lum = dot(n.rgb, vec3(0.3, 0.45, 0.25));',
-    '    a *= (1.0 - 0.9 * v_k.y * n.a) * mix(1.0, 0.45 + 2.5 * lum, v_k.y);',
+    '    a *= (1.0 - 0.9 * v_k.y * n.a) * mix(1.0, 0.45 + 5.0 * lum, v_k.y);',
     '  }',
     '  a *= v_col.a;',
-    '  gl_FragColor = vec4(v_col.rgb * a, a);',
+    '  gl_FragColor = vec4(col * a, a);',
     '}'
   ].join('\n');
 
@@ -536,16 +581,20 @@
   // ---------- deep space ----------
   var NEB_PAR = 0.18;   // scroll factor of the nebula and the far stars (streams: PARALLAX)
   var NEB_TEXEL = 2;    // CSS px per nebula texel: the gas is soft, bilinear upscaling hides it
-  var NEB_GAIN = 0.26;  // brightness of the gas over the background colour
-  // [r, g, b, weight]: blue-white, white, yellow-white, orange, red
-  var STAR_COL = [[0.72, 0.82, 1.00, 0.28], [0.92, 0.95, 1.00, 0.32], [1.00, 0.94, 0.84, 0.22], [1.00, 0.79, 0.56, 0.14], [1.00, 0.63, 0.50, 0.04]];
-  // per = CSS px² of sky per star; ext = how much the nebula's dust and glow affect the layer
+  var NEB_GAIN = 0.64;  // brightness of the gas over the background colour (the texture holds it at half scale)
+  // [r, g, b, weight]: blue, blue-white, white, yellow-white, orange, red
+  var STAR_COL = [[0.55, 0.70, 1.00, 0.1], [0.72, 0.82, 1.00, 0.22], [0.92, 0.95, 1.00, 0.28], [1.00, 0.92, 0.78, 0.2], [1.00, 0.74, 0.48, 0.15], [1.00, 0.56, 0.44, 0.05]];
+  // per = CSS px² of sky per star; ext = how much the nebula's dust and glow affect the layer;
+  // blink = share of stars that twinkle hard instead of gently
   var STAR_LAYERS = [
-    { par: NEB_PAR, per: 450, r: [0.45, 0.9], b: [0.25, 0.9], tw: 0.1, ext: 1, spikes: 0 },
-    { par: 0.28, per: 2600, r: [0.6, 1.3], b: [0.4, 1.0], tw: 0.2, ext: 0.55, spikes: 0 },
-    { par: 0.38, per: 30000, r: [1.0, 2.0], b: [0.7, 1.0], tw: 0.25, ext: 0.2, spikes: 0.4 }
+    { par: NEB_PAR, per: 450, r: [0.45, 0.9], b: [0.25, 0.9], tw: 0.1, ext: 1, spikes: 0, blink: 0 },
+    { par: 0.28, per: 2600, r: [0.6, 1.3], b: [0.4, 1.0], tw: 0.2, ext: 0.55, spikes: 0, blink: 0.1 },
+    { par: 0.38, per: 30000, r: [1.0, 2.0], b: [0.7, 1.0], tw: 0.25, ext: 0.2, spikes: 0.4, blink: 0.25 }
   ];
-  var GALAXY_PER = 260000;
+  var GALAXY_PER = 180000;     // small elliptical smudges
+  var SPIRAL_PER = 1400000;    // large spiral galaxies
+  var NOVA_PAR = 0.28;
+  var NOVA_TINT = [[0.55, 0.75, 1.0], [1.0, 0.55, 0.8], [1.0, 0.8, 0.5], [0.6, 1.0, 0.95]];
 
   var nebTex = null, nebFbo = null, nebKey = '', nebWorld = [1, 1];
   function buildNebula(w, h) {
@@ -608,10 +657,13 @@
       for (i = 0; i < n; i++) {
         var m = Math.pow(rnd(), 2.5); // most stars faint, a few bright
         var spikes = m > 0.55 && rnd() < L.spikes;
+        var blink = rnd() < L.blink;
         star(rnd() * vw, rnd() * H - 48,
-          L.r[0] + (L.r[1] - L.r[0]) * m * (0.7 + 0.3 * rnd()), L.b[0] + (L.b[1] - L.b[0]) * m,
-          L.par, H, starColour(rnd()), rnd() * TAU,
-          spikes ? 1 : 0, L.tw * (0.5 + rnd()), 0.4 + 1.4 * rnd(), L.ext);
+          (L.r[0] + (L.r[1] - L.r[0]) * m * (0.7 + 0.3 * rnd())) * (blink ? 1.25 : 1),
+          blink ? L.b[1] : L.b[0] + (L.b[1] - L.b[0]) * m,
+          L.par, H, starColour(rnd()), rnd() * TAU, spikes ? 1 : 0,
+          blink ? 0.85 + 0.1 * rnd() : L.tw * (0.5 + rnd()),
+          blink ? 1.6 + 2.2 * rnd() : 0.4 + 1.4 * rnd(), L.ext);
       }
     }
     H = vh + (docH - vh) * NEB_PAR + vh * 0.5 + 96;
@@ -620,6 +672,20 @@
       star(rnd() * vw, rnd() * H - 48, 2.8 + 5 * Math.pow(rnd(), 2), 0.2 + 0.16 * rnd(),
         NEB_PAR, H, rnd() < 0.6 ? [1.0, 0.9, 0.8] : [0.8, 0.86, 1.0], 0,
         2, 0.25 + 0.55 * rnd(), rnd() * TAU, 0.6);
+    }
+    n = Math.max(2, Math.round(vw * H / SPIRAL_PER));
+    for (i = 0; i < n; i++) {
+      var spin = (0.03 + 0.03 * rnd()) * (rnd() < 0.5 ? -1 : 1);
+      star(rnd() * vw, rnd() * H - 48, 24 + 22 * rnd(), 0.5 + 0.2 * rnd(),
+        NEB_PAR, H, [1, 1, 1], spin, 4, 0.3 + 0.55 * rnd(), rnd() * TAU, 0.3);
+    }
+    // supernovae: about one flare every 6–7 s somewhere on screen (none for reduced motion)
+    H = vh + (docH - vh) * NOVA_PAR + vh * 0.5 + 96;
+    n = REDUCE ? 0 : Math.max(1, Math.round(1.5 * H / vh));
+    for (i = 0; i < n; i++) {
+      var period = 8 + 6 * rnd();
+      star(0, 0, 1.6, 1.8, NOVA_PAR, H, NOVA_TINT[Math.floor(rnd() * NOVA_TINT.length)], rnd() * period,
+        3, rnd() * 100, period, 0);
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, starBuf);
     gl.bufferData(gl.ARRAY_BUFFER, sbuf.subarray(0, slen), gl.STATIC_DRAW);
