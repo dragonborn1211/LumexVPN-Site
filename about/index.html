@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>О проекте — LumexVPN</title>
+<meta name="description" content="LumexVPN — VPN-сервис для свободного и безопасного доступа к интернету на всех устройствах. Наши принципы и как начать." />
+<meta name="theme-color" content="#0A0E1A" />
+<meta property="og:title" content="О проекте — LumexVPN" />
+<meta property="og:description" content="LumexVPN — VPN-сервис для свободного и безопасного доступа к интернету на всех устройствах. Наши принципы и как начать." />
+<meta property="og:image" content="https://www.lumexvpn.com/assets/icon.png" />
+<meta property="og:type" content="website" />
+<link rel="icon" href="../assets/icon.png" />
+<link rel="apple-touch-icon" href="../assets/icon.png" />
+<script>document.documentElement.classList.add('bg-live');</script>
+<link rel="stylesheet" href="../assets/doc.css" />
+</head>
+<body>
+
+<canvas id="flow-bg" aria-hidden="true"></canvas>
+
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;">
+  <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF4D8D"/>
+      <stop offset="50%" stop-color="#9B5CFF"/>
+      <stop offset="100%" stop-color="#00E5FF"/>
+    </linearGradient>
+  </defs>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.6"/>
+    <path d="M5 20c0-3.6 3-6.2 7-6.2s7 2.6 7 6.2"/>
+  </symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 12h14"/>
+    <path d="m13 6 6 6-6 6"/>
+  </symbol>
+  <symbol id="i-telegram" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m21 4-9 17-2-8-8-2 19-7Z"/>
+    <path d="M10 13 21 4"/>
+  </symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="5" width="18" height="14" rx="2"/>
+    <path d="m4 7 8 6 8-6"/>
+  </symbol>
+  <symbol id="i-discord" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 5.5C6 6 4.5 8 4 11c-.6 3-.4 5.5.5 7.2 1 .4 2 .7 3 .8l.7-1.4c-.5-.2-1-.4-1.5-.7.2-.1.4-.3.6-.4 3 1.4 6.4 1.4 9.4 0 .2.1.4.3.6.4-.5.3-1 .5-1.5.7l.7 1.4c1-.1 2-.4 3-.8.9-2 1-4.5.5-7.2-.5-3-2-5-4-5.5-.3.5-.6 1-.8 1.5a13 13 0 0 0-5.2 0c-.2-.5-.5-1-.8-1.5Z"/>
+    <circle cx="9" cy="12.5" r="1.1" fill="url(#iconGrad)" stroke="none"/>
+    <circle cx="15" cy="12.5" r="1.1" fill="url(#iconGrad)" stroke="none"/>
+  </symbol>
+  <symbol id="i-no-trace" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2 12c1.8-4 5.6-7 10-7s8.2 3 10 7c-1.8 4-5.6 7-10 7S3.8 16 2 12Z" opacity="0.6"/>
+    <circle cx="12" cy="12" r="1.8" fill="url(#iconGrad)" stroke="none"/>
+    <path d="M4 5 20 19" stroke-width="2.2"/>
+  </symbol>
+  <symbol id="i-streak" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 18C7 14 9 10 12 5" opacity="0.5"/>
+    <path d="M6 16C9 12.5 10.5 9.5 13 6"/>
+    <circle cx="13.2" cy="5.7" r="1.7" fill="url(#iconGrad)" stroke="none"/>
+  </symbol>
+  <symbol id="i-mesh" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(20 12 12)"/>
+    <ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(-20 12 12)"/>
+    <circle cx="12" cy="12" r="2" fill="url(#iconGrad)" stroke="none"/>
+    <circle cx="21.3" cy="9.2" r="1.1" fill="url(#iconGrad)" stroke="none"/>
+    <circle cx="2.7" cy="14.8" r="1.1" fill="url(#iconGrad)" stroke="none"/>
+  </symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2 4 5v6c0 5 3.4 8.7 8 11 4.6-2.3 8-6 8-11V5l-8-3Z"/>
+    <path d="M13 8 10 12.2h2.4L11 16l4-4.4h-2.2L13 8Z" fill="url(#iconGrad)" stroke="none"/>
+  </symbol>
+  <symbol id="i-android" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 11a6 6 0 0 1 12 0v5H6v-5Z"/>
+    <path d="M7 5.5 8.3 7.3M17 5.5l-1.3 1.8"/>
+    <path d="M4.3 11.5v4M19.7 11.5v4"/>
+    <path d="M8.5 18v2.3M15.5 18v2.3"/>
+    <circle cx="9.3" cy="9.3" r="0.6" fill="url(#iconGrad)" stroke="none"/>
+    <circle cx="14.7" cy="9.3" r="0.6" fill="url(#iconGrad)" stroke="none"/>
+  </symbol>
+  <symbol id="i-apple" viewBox="0 0 24 24" fill="url(#iconGrad)" stroke="none">
+    <path d="M15.5 8.1c-.9 0-2.1.6-2.8.6-.7 0-1.7-.6-2.8-.6-2.2 0-4.4 1.8-4.4 5.2 0 3.6 2.5 7.8 4.3 7.8.8 0 1.2-.5 2.4-.5s1.5.5 2.4.5c1.7 0 3.2-3.1 3.9-4.9-2.4-1-2.7-4.6-.3-6-.9-1.3-2.3-2.1-2.7-2.1Z"/>
+    <path d="M13.6 6.8c.4-.6.8-1.5.6-2.4-.8.1-1.7.6-2.2 1.3-.4.5-.8 1.4-.6 2.2.9.1 1.8-.5 2.2-1.1Z"/>
+  </symbol>
+  <symbol id="i-windows" viewBox="0 0 24 24" fill="url(#iconGrad)" stroke="none">
+    <path d="M3 5.5 11 4.4V11.6H3V5.5Z"/>
+    <path d="M12.3 4.2 21 3v8.6h-8.7V4.2Z"/>
+    <path d="M3 12.6h8v7.1L3 18.6v-6Z"/>
+    <path d="M12.3 12.6H21V21l-8.7-1.2v-7.2Z"/>
+  </symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="4" width="20" height="16" rx="2"/>
+    <path d="m6 9 3 3-3 3"/>
+    <path d="M12 15h6"/>
+  </symbol>
+</svg>
+
+<div class="page">
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="../">
+      <img src="../assets/icon.png" alt="LumexVPN" />
+      <span>LumexVPN</span>
+    </a>
+    <nav class="nav-links">
+      <a href="../#features">Преимущества</a>
+      <a href="../#payment">Оплата</a>
+      <a href="../#apps">Приложения</a>
+      <a href="../#faq">FAQ</a>
+    </nav>
+    <a class="btn btn-outline btn-pill btn-sm" href="#" aria-disabled="true"><svg width="15" height="15"><use href="#i-user"/></svg> Личный кабинет</a>
+  </div>
+</header>
+
+<main>
+  <section class="doc-hero">
+    <div class="wrap">
+      <div class="eyebrow-plain"><span class="dot"></span> Свет. Знание. Свобода.</div>
+      <h1>О проекте <span class="grad">LumexVPN</span></h1>
+      <p class="lead">VPN-сервис, который открывает свободный и безопасный доступ к интернету на всех ваших устройствах — без слежки, сложных настроек и лишних условий.</p>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="about-block">
+      <div class="about-intro">
+        <p>Наш девиз — <strong>«Свет. Знание. Свобода.»</strong> Мы верим, что доступ к информации должен быть таким же естественным, как свет: без барьеров, без слежки и без лишних сложностей. Поэтому символ LumexVPN — поток света и энергии, который проходит сквозь любые границы.</p>
+        <p>LumexVPN шифрует соединение между вашим устройством и нашим сервером, поэтому то, что вы делаете в сети, не видят ни провайдер, ни посторонние в публичном Wi-Fi. При этом мы сами не храним историю посещённых сайтов и содержимое трафика — то есть не следим за вами и со своей стороны.</p>
+      </div>
+    </div>
+
+    <div class="about-block">
+      <h2 class="section-title">Наши принципы</h2>
+      <div class="cards">
+        <div class="card">
+          <div class="icon-badge i-pink"><svg><use href="#i-no-trace"/></svg></div>
+          <h3>Приватность прежде всего</h3>
+          <p>Не собираем историю посещений и содержимое трафика. Нет данных — нечего передавать.</p>
+        </div>
+        <div class="card">
+          <div class="icon-badge i-orange"><svg><use href="#i-streak"/></svg></div>
+          <h3>Скорость и стабильность</h3>
+          <p>Работаем над тем, чтобы соединение было быстрым и не обрывалось — для видео, игр и работы.</p>
+        </div>
+        <div class="card">
+          <div class="icon-badge i-purple"><svg><use href="#i-mesh"/></svg></div>
+          <h3>Все ваши устройства</h3>
+          <p>Приложения для Android, iOS, Windows, macOS и Linux. Одна подписка — все ваши устройства.</p>
+        </div>
+        <div class="card">
+          <div class="icon-badge i-cyan"><svg><use href="#i-shield"/></svg></div>
+          <h3>Честные условия</h3>
+          <p>Понятная цена — 250 ₽ в месяц. Подписку можно отменить в любой момент.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-block">
+      <h2 class="section-title">Как начать</h2>
+      <div class="steps">
+        <div class="card step">
+          <span class="step-num" aria-hidden="true"></span>
+          <h3>Оформите подписку</h3>
+          <p>Выберите удобный способ оплаты: карта, СБП, Telegram Stars, криптовалюта и другие.</p>
+        </div>
+        <div class="card step">
+          <span class="step-num" aria-hidden="true"></span>
+          <h3>Установите приложение</h3>
+          <p>Скачайте LumexVPN для своего устройства в разделе <a href="../#apps" style="color: var(--pink);">«Приложения»</a>.</p>
+        </div>
+        <div class="card step">
+          <span class="step-num" aria-hidden="true"></span>
+          <h3>Подключитесь</h3>
+          <p>Выберите сервер и включите VPN — соединение защищено.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-block">
+      <h2 class="section-title">Платформы</h2>
+      <div class="platforms">
+        <span class="platform"><svg><use href="#i-android"/></svg> Android</span>
+        <span class="platform"><svg><use href="#i-apple"/></svg> iOS</span>
+        <span class="platform"><svg><use href="#i-windows"/></svg> Windows</span>
+        <span class="platform"><svg><use href="#i-apple"/></svg> macOS</span>
+        <span class="platform"><svg><use href="#i-terminal"/></svg> Linux</span>
+      </div>
+    </div>
+
+    <div class="about-block">
+      <div class="about-cta">
+        <div>
+          <h2>Готовы подключиться?</h2>
+          <p>Подписка — 250 ₽ в месяц, доступ сразу после оплаты. Вопросы — в Telegram, поможем разобраться.</p>
+        </div>
+        <div class="actions">
+          <a class="btn btn-primary" href="../#payment">Подключить LumexVPN <svg width="16" height="16"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn-outline" href="https://t.me/lumexconnect_bot">Написать в поддержку</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap footer-row">
+    <div class="footer-brand">
+      <a class="brand" href="../">
+        <img src="../assets/icon.png" alt="LumexVPN" />
+        <span>LumexVPN</span>
+      </a>
+      <span class="tagline">Свет. Знание. Свобода. · © 2026 LumexVPN</span>
+    </div>
+    <nav class="footer-links">
+      <a href="../about/" aria-current="page">О проекте</a>
+      <a href="../#faq">FAQ</a>
+      <a href="https://t.me/lumexconnect_bot">Поддержка</a>
+      <a href="../privacy/">Политика конфиденциальности</a>
+      <a href="../terms/">Условия использования</a>
+    </nav>
+    <div class="footer-social">
+      <a href="https://t.me/lumexconnect_bot" aria-label="Telegram"><svg><use href="#i-telegram"/></svg></a>
+      <a href="mailto:support@lumexvpn.com" aria-label="Email"><svg><use href="#i-mail"/></svg></a>
+      <a href="#" aria-disabled="true" aria-label="Discord"><svg><use href="#i-discord"/></svg></a>
+    </div>
+  </div>
+</footer>
+</div>
+
+<script src="../assets/flow-bg.js"></script>
+</body>
+</html>

@@ -4,85 +4,203 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Политика конфиденциальности — LumexVPN</title>
-<meta name="description" content="Политика конфиденциальности LumexVPN." />
-<link rel="icon" href="/assets/icon.png" />
-<style>
-  :root {
-    --bg: #0A0E1A;
-    --card: #111419;
-    --pink: #FF4D8D;
-    --text-secondary: rgba(255,255,255,0.65);
-    --text-muted: rgba(255,255,255,0.30);
-    --divider: rgba(255,255,255,0.07);
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
-  }
-  .wrap {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 40px 24px 80px;
-  }
-  a.back {
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: 14px;
-    display: inline-block;
-    margin-bottom: 24px;
-  }
-  a.back:hover { color: #fff; }
-  h1 {
-    font-size: 22px;
-    font-weight: 700;
-    margin: 0 0 6px;
-  }
-  .updated {
-    color: var(--text-muted);
-    font-size: 12px;
-    margin-bottom: 32px;
-  }
-  h2 {
-    font-size: 15px;
-    font-weight: 600;
-    margin: 28px 0 8px;
-  }
-  p {
-    color: var(--text-secondary);
-    font-size: 14px;
-    line-height: 1.6;
-    margin: 0 0 4px;
-  }
-</style>
+<meta name="description" content="Политика конфиденциальности LumexVPN: какие данные обрабатывает сервис и как мы их защищаем. Мы не храним историю посещений и содержимое трафика." />
+<meta name="theme-color" content="#0A0E1A" />
+<meta property="og:title" content="Политика конфиденциальности — LumexVPN" />
+<meta property="og:description" content="Политика конфиденциальности LumexVPN: какие данные обрабатывает сервис и как мы их защищаем. Мы не храним историю посещений и содержимое трафика." />
+<meta property="og:image" content="https://www.lumexvpn.com/assets/icon.png" />
+<meta property="og:type" content="website" />
+<link rel="icon" href="../assets/icon.png" />
+<link rel="apple-touch-icon" href="../assets/icon.png" />
+<script>document.documentElement.classList.add('bg-live');</script>
+<link rel="stylesheet" href="../assets/doc.css" />
 </head>
 <body>
-  <div class="wrap">
-    <a class="back" href="/">&larr; LumexVPN</a>
-    <h1>Политика конфиденциальности</h1>
-    <div class="updated">Обновлено: 13.08.2026</div>
 
-    <p>Настоящая Политика конфиденциальности описывает, как LumexVPN обрабатывает данные пользователей.</p>
+<canvas id="flow-bg" aria-hidden="true"></canvas>
 
-    <h2>1. Какие данные мы обрабатываем</h2>
-    <p>LumexVPN не собирает и не хранит историю посещённых сайтов, содержимое трафика или иные данные о вашей активности в интернете. Для работы самого VPN-соединения приложению технически необходимо передать серверу параметры подключения (например, выбранный сервер) — эти данные используются только для установления сессии и не сохраняются как часть профиля пользователя.</p>
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;">
+  <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF4D8D"/>
+      <stop offset="50%" stop-color="#9B5CFF"/>
+      <stop offset="100%" stop-color="#00E5FF"/>
+    </linearGradient>
+  </defs>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="3.6"/>
+    <path d="M5 20c0-3.6 3-6.2 7-6.2s7 2.6 7 6.2"/>
+  </symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 12h14"/>
+    <path d="m13 6 6 6-6 6"/>
+  </symbol>
+  <symbol id="i-telegram" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m21 4-9 17-2-8-8-2 19-7Z"/>
+    <path d="M10 13 21 4"/>
+  </symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="5" width="18" height="14" rx="2"/>
+    <path d="m4 7 8 6 8-6"/>
+  </symbol>
+  <symbol id="i-discord" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 5.5C6 6 4.5 8 4 11c-.6 3-.4 5.5.5 7.2 1 .4 2 .7 3 .8l.7-1.4c-.5-.2-1-.4-1.5-.7.2-.1.4-.3.6-.4 3 1.4 6.4 1.4 9.4 0 .2.1.4.3.6.4-.5.3-1 .5-1.5.7l.7 1.4c1-.1 2-.4 3-.8.9-2 1-4.5.5-7.2-.5-3-2-5-4-5.5-.3.5-.6 1-.8 1.5a13 13 0 0 0-5.2 0c-.2-.5-.5-1-.8-1.5Z"/>
+    <circle cx="9" cy="12.5" r="1.1" fill="url(#iconGrad)" stroke="none"/>
+    <circle cx="15" cy="12.5" r="1.1" fill="url(#iconGrad)" stroke="none"/>
+  </symbol>
+</svg>
 
-    <h2>2. Передача данных третьим лицам</h2>
-    <p>Мы не передаём, не продаём и не предоставляем доступ к данным о вашем трафике или активности третьим лицам ни при каких условиях.</p>
-
-    <h2>3. Разрешение VpnService</h2>
-    <p>Приложение использует системный сервис VPN (VpnService на Android) исключительно для шифрования и туннелирования вашего интернет-трафика через выбранный сервер. Это разрешение не используется для сбора данных о приложении или для какой-либо активности за пределами работы самого VPN-туннеля.</p>
-
-    <h2>4. Хранение локальных настроек</h2>
-    <p>Часть настроек (например, выбранный сервер, включён ли автозапуск) хранится локально на устройстве и не передаётся на наши серверы.</p>
-
-    <h2>5. Изменения политики</h2>
-    <p>Мы можем обновлять этот текст по мере развития приложения. Дата последнего обновления указана на экране.</p>
-
-    <h2>6. Обратная связь</h2>
-    <p>Если у вас есть вопросы по этой политике, напишите нам в поддержку — раздел «Поддержка» в настройках приложения, либо <a href="https://t.me/lumexconnect_bot" style="color: var(--pink);">в Telegram</a>.</p>
+<div class="page">
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="../">
+      <img src="../assets/icon.png" alt="LumexVPN" />
+      <span>LumexVPN</span>
+    </a>
+    <nav class="nav-links">
+      <a href="../#features">Преимущества</a>
+      <a href="../#payment">Оплата</a>
+      <a href="../#apps">Приложения</a>
+      <a href="../#faq">FAQ</a>
+    </nav>
+    <a class="btn btn-outline btn-pill btn-sm" href="#" aria-disabled="true"><svg width="15" height="15"><use href="#i-user"/></svg> Личный кабинет</a>
   </div>
+</header>
+
+<main>
+  <section class="doc-hero">
+    <div class="wrap">
+      <div class="eyebrow-plain"><span class="dot"></span> Правовая информация</div>
+      <h1>Политика конфиденциальности</h1>
+      <p class="lead">Коротко: мы не следим за тем, что вы делаете в интернете. Ниже подробно — какие данные нужны сервису для работы и как мы с ними обращаемся.</p>
+      <div class="doc-meta">Редакция от 27 сентября 2026 г.</div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <article class="doc">
+      <div class="doc-callout"><p>LumexVPN не собирает и не хранит историю посещённых сайтов, содержимое трафика и другие данные о вашей активности в интернете.</p></div>
+      <nav class="toc" aria-label="Содержание">
+        <p class="toc-title">Содержание</p>
+        <ol>
+          <li><a href="#general">Общие положения</a></li>
+          <li><a href="#no-logs">Чего мы не собираем</a></li>
+          <li><a href="#data">Какие данные мы обрабатываем</a></li>
+          <li><a href="#purposes">Зачем мы обрабатываем данные</a></li>
+          <li><a href="#third-parties">Передача данных третьим лицам</a></li>
+          <li><a href="#vpnservice">Разрешение VpnService</a></li>
+          <li><a href="#local">Локальные настройки</a></li>
+          <li><a href="#storage">Хранение и защита данных</a></li>
+          <li><a href="#website">Сайт и cookies</a></li>
+          <li><a href="#rights">Ваши права</a></li>
+          <li><a href="#changes">Изменения политики</a></li>
+          <li><a href="#contacts">Контакты</a></li>
+        </ol>
+      </nav>
+
+        <h2 id="general"><span class="num">1.</span>Общие положения</h2>
+<p>Настоящая Политика конфиденциальности описывает, как сервис LumexVPN — приложения LumexVPN для Android, iOS, Windows, macOS и Linux и сайт www.lumexvpn.com (далее — «Сервис») — обрабатывает данные пользователей.</p>
+        <p>Сервис предоставляет <span class="todo">[наименование организации или ИП, ИНН]</span> (далее — «мы»). Пользуясь Сервисом, вы соглашаетесь с этой Политикой. Если вы с ней не согласны, пожалуйста, не используйте Сервис.</p>
+
+        <h2 id="no-logs"><span class="num">2.</span>Чего мы не собираем</h2>
+<p>Мы не собираем и не храним:</p>
+        <ul>
+          <li>историю посещённых сайтов;</li>
+          <li>содержимое передаваемого трафика;</li>
+          <li>иные данные о вашей активности в интернете.</li>
+        </ul>
+        <p>Для работы VPN-соединения приложению технически необходимо передать серверу параметры подключения (например, выбранный сервер). Эти данные используются только для установления сессии и не сохраняются как часть профиля пользователя.</p>
+
+        <h2 id="data"><span class="num">3.</span>Какие данные мы обрабатываем</h2>
+<p>Для работы Сервиса мы обрабатываем минимальный набор данных:</p>
+        <ul>
+          <li><strong>Данные о подписке</strong> — её идентификатор, статус и срок действия, а также контакт, через который она оформлена (например, аккаунт Telegram или адрес электронной почты). Нужны, чтобы предоставить вам доступ к Сервису.</li>
+          <li><strong>Данные об оплате</strong> — сумма, дата, способ и идентификатор платежа, которые передаёт платёжный сервис после оплаты. Полные данные банковских карт мы не получаем и не храним: вы вводите их на стороне платёжного сервиса, и он их обрабатывает.</li>
+          <li><strong>Обращения в поддержку</strong> — текст сообщений и контактные данные, которые вы сами указали. Используются только для ответа на ваш вопрос.</li>
+          <li><strong>Параметры подключения</strong> — то, что нужно для установления VPN-сессии (см. раздел 2). Не сохраняются как часть профиля пользователя.</li>
+        </ul>
+
+        <h2 id="purposes"><span class="num">4.</span>Зачем мы обрабатываем данные</h2>
+<ul>
+          <li>чтобы предоставить доступ к Сервису и обеспечить работу VPN-соединения;</li>
+          <li>чтобы принять и подтвердить оплату подписки;</li>
+          <li>чтобы отвечать на обращения в поддержку;</li>
+          <li>чтобы поддерживать стабильную и безопасную работу Сервиса;</li>
+          <li>чтобы выполнять обязанности, установленные законом (например, по учёту платежей).</li>
+        </ul>
+        <p>Мы используем данные только для этих целей.</p>
+
+        <h2 id="third-parties"><span class="num">5.</span>Передача данных третьим лицам</h2>
+<p>Мы не передаём, не продаём и не предоставляем доступ к данным о вашем трафике или активности третьим лицам ни при каких условиях. Мы такие данные не храним, поэтому передать их невозможно в принципе.</p>
+        <p>Остальные данные передаются только в объёме, необходимом для работы Сервиса:</p>
+        <ul>
+          <li>платёжным сервисам — чтобы провести оплату;</li>
+          <li>хостинг-провайдерам и поставщикам инфраструктуры, на мощностях которых работают сайт и серверы Сервиса;</li>
+          <li>государственным органам — только в случаях и в порядке, прямо предусмотренных законом.</li>
+        </ul>
+
+        <h2 id="vpnservice"><span class="num">6.</span>Разрешение VpnService</h2>
+<p>Приложение для Android использует системный сервис VPN (VpnService) исключительно для шифрования и туннелирования вашего интернет-трафика через выбранный сервер. Это разрешение не используется для сбора данных о приложениях или для какой-либо активности за пределами работы самого VPN-туннеля.</p>
+
+        <h2 id="local"><span class="num">7.</span>Локальные настройки</h2>
+<p>Часть настроек — например, выбранный сервер и включён ли автозапуск — хранится локально на вашем устройстве и не передаётся на наши серверы.</p>
+
+        <h2 id="storage"><span class="num">8.</span>Хранение и защита данных</h2>
+<p>Мы храним данные не дольше, чем нужно для целей из раздела 4: данные о подписке — пока она действует; сведения о платежах — в течение срока, установленного законодательством; переписку с поддержкой — пока это нужно для решения вашего вопроса.</p>
+        <p>Для защиты данных мы применяем технические и организационные меры: шифруем соединения и ограничиваем доступ к данным кругом лиц, которым он необходим для работы Сервиса.</p>
+
+        <h2 id="website"><span class="num">9.</span>Сайт и cookies</h2>
+<p>Сайт www.lumexvpn.com не использует cookies для отслеживания и не подключает сторонние системы аналитики. Сайт размещён на GitHub Pages: как и любой хостинг, он может обрабатывать технические данные запросов (например, IP-адрес и тип браузера), чтобы обеспечивать работу и безопасность сайта.</p>
+
+        <h2 id="rights"><span class="num">10.</span>Ваши права</h2>
+<p>Вы можете:</p>
+        <ul>
+          <li>узнать, какие ваши данные мы обрабатываем;</li>
+          <li>попросить исправить неточные данные;</li>
+          <li>попросить удалить ваши данные, если их хранение не требуется по закону;</li>
+          <li>отозвать согласие на обработку данных — в этом случае пользоваться Сервисом может стать невозможно.</li>
+        </ul>
+        <p>Чтобы воспользоваться этими правами, напишите нам (раздел 12). Мы ответим в сроки, установленные законом.</p>
+
+        <h2 id="changes"><span class="num">11.</span>Изменения политики</h2>
+<p>Мы можем обновлять Политику по мере развития Сервиса. Актуальная редакция всегда опубликована на этой странице, а дата последнего обновления указана в начале документа.</p>
+
+        <h2 id="contacts"><span class="num">12.</span>Контакты</h2>
+<p>По вопросам, связанным с этой Политикой и обработкой данных, пишите нам:</p>
+        <ul>
+          <li>в Telegram: <a href="https://t.me/lumexconnect_bot">@lumexconnect_bot</a>;</li>
+          <li>через раздел «Поддержка» в настройках приложения;</li>
+          <li>по электронной почте: <span class="todo">support@lumexvpn.com</span>.</li>
+        </ul>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap footer-row">
+    <div class="footer-brand">
+      <a class="brand" href="../">
+        <img src="../assets/icon.png" alt="LumexVPN" />
+        <span>LumexVPN</span>
+      </a>
+      <span class="tagline">Свет. Знание. Свобода. · © 2026 LumexVPN</span>
+    </div>
+    <nav class="footer-links">
+      <a href="../about/">О проекте</a>
+      <a href="../#faq">FAQ</a>
+      <a href="https://t.me/lumexconnect_bot">Поддержка</a>
+      <a href="../privacy/" aria-current="page">Политика конфиденциальности</a>
+      <a href="../terms/">Условия использования</a>
+    </nav>
+    <div class="footer-social">
+      <a href="https://t.me/lumexconnect_bot" aria-label="Telegram"><svg><use href="#i-telegram"/></svg></a>
+      <a href="mailto:support@lumexvpn.com" aria-label="Email"><svg><use href="#i-mail"/></svg></a>
+      <a href="#" aria-disabled="true" aria-label="Discord"><svg><use href="#i-discord"/></svg></a>
+    </div>
+  </div>
+</footer>
+</div>
+
+<script src="../assets/flow-bg.js"></script>
 </body>
 </html>
