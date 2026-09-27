@@ -215,12 +215,6 @@
   .hero {
     padding: 64px 0 90px;
   }
-  .hero-grid {
-    display: grid;
-    grid-template-columns: 1.05fr 1fr;
-    gap: 32px;
-    align-items: center;
-  }
   .hero h1 {
     font-size: 52px;
     line-height: 1.1;
@@ -244,115 +238,37 @@
     font-size: 17px;
     line-height: 1.6;
   }
+  /* four equal columns with dividers; 2×2 on narrow screens (see media queries) */
   .hero-features {
-    display: flex;
-    flex-wrap: wrap;
-    margin-top: 44px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    max-width: 780px;
+    margin-top: 48px;
   }
   .hero-feature {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 4px 22px;
+    gap: 12px;
+    min-width: 0;
+    padding: 6px 20px;
     border-left: 1px solid var(--divider);
   }
   .hero-feature:first-child { padding-left: 0; border-left: none; }
   .hero-feature-icon {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
   }
-  .hero-feature-icon svg { width: 17px; height: 17px; position: relative; z-index: 1; }
+  .hero-feature-icon svg { width: 18px; height: 18px; position: relative; z-index: 1; }
   .hero-feature span {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-secondary);
-    line-height: 1.3;
-  }
-
-  /* ---------- Hero device mockups ---------- */
-  .hero-devices {
-    position: relative;
-    height: 420px;
-  }
-  .device {
-    position: absolute;
-    background: #0c0f16;
-    border: 2px solid rgba(255,255,255,0.10);
-    box-shadow: 0 30px 70px -25px rgba(0,0,0,0.7);
-  }
-  .device-screen {
-    position: absolute;
-    background-image: url('/assets/icon.png');
-    background-size: cover;
-    background-repeat: no-repeat;
-  }
-  .device-laptop {
-    width: 76%;
-    height: 60%;
-    left: 0;
-    top: 8%;
-    border-radius: 12px 12px 3px 3px;
-    transform: perspective(1000px) rotateY(7deg) rotateX(2deg);
-  }
-  .device-laptop .device-screen {
-    inset: 4% 4% 9% 4%;
-    border-radius: 3px;
-    background-position: 46% 56%;
-  }
-  .laptop-base {
-    position: absolute;
-    left: -5%;
-    right: -5%;
-    bottom: -14px;
-    height: 12px;
-    background: linear-gradient(180deg, #1b202b, #0c0f16);
-    border-radius: 0 0 10px 10px;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-top: none;
-  }
-  .device-tablet {
-    width: 30%;
-    height: 48%;
-    right: 2%;
-    top: -4%;
-    border-radius: 16px;
-    transform: rotate(-9deg);
-  }
-  .device-tablet .device-screen {
-    inset: 5%;
-    border-radius: 8px;
-    background-position: 50% 52%;
-  }
-  .device-phone {
-    width: 18%;
-    height: 44%;
-    right: 8%;
-    bottom: -6%;
-    border-radius: 22px;
-    transform: rotate(7deg);
-    border-color: rgba(255,255,255,0.14);
-  }
-  .device-phone .device-screen {
-    inset: 3.5% 3%;
-    border-radius: 16px;
-    background-position: 50% 55%;
-  }
-  .device-notch {
-    position: absolute;
-    top: 3%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 32%;
-    height: 3%;
-    min-height: 5px;
-    background: #0c0f16;
-    border-radius: 4px;
-    z-index: 2;
+    line-height: 1.35;
   }
 
   /* ---------- Shared glowing icon badge ---------- */
@@ -445,7 +361,7 @@
     display: grid;
     grid-template-columns: 1.6fr 1fr;
     gap: 32px;
-    align-items: start;
+    align-items: stretch; /* pricing card spans the full height of the heading + methods column */
   }
   .payment-methods-grid {
     display: grid;
@@ -475,6 +391,8 @@
   .pay-tile p { font-size: 12px; color: var(--text-muted); margin: 0; line-height: 1.4; }
 
   .pricing-card {
+    display: flex;
+    flex-direction: column;
     background: var(--card);
     border: 1px solid var(--divider);
     border-radius: var(--radius-lg);
@@ -498,7 +416,9 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 13px;
+    justify-content: center;
+    flex: 1;
+    gap: 16px;
   }
   .pricing-list li {
     display: flex;
@@ -600,10 +520,12 @@
 
   /* ---------- Responsive ---------- */
   @media (max-width: 980px) {
-    .hero-grid { grid-template-columns: 1fr; }
-    .hero-devices { display: none; }
     .payment-layout { grid-template-columns: 1fr; }
     .features-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 760px) {
+    .hero-features { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 20px; }
+    .hero-feature:nth-child(odd) { padding-left: 0; border-left: none; }
   }
   @media (max-width: 640px) {
     .nav-links { display: none; }
@@ -611,7 +533,7 @@
     .hero { padding: 40px 0 56px; }
     .hero h1 { font-size: 36px; letter-spacing: -1px; }
     .hero p.lead { font-size: 16px; }
-    .hero-feature { padding: 4px 14px; }
+    .hero-feature { padding: 4px 0 4px 16px; }
     .features-grid { grid-template-columns: 1fr; }
     .section-head h2 { font-size: 26px; }
     .footer-row { flex-direction: column; align-items: flex-start; }
@@ -792,45 +714,27 @@
   <!-- Hero -->
   <section class="hero">
     <div class="wrap">
-      <div class="hero-grid">
-        <div>
-          <div class="eyebrow-plain"><span class="dot"></span> Стабильно · Быстро · Без ограничений</div>
-          <h1>Поток света<br />и энергии.<br /><span class="grad">Без границ.</span></h1>
-          <p class="lead">LumexVPN открывает вам свободный и безопасный доступ к интернету. Работает на всех ваших устройствах.</p>
-          <a class="btn btn-primary" href="#apps">Подключить LumexVPN <svg width="16" height="16"><use href="#i-arrow"/></svg></a>
+      <div class="eyebrow-plain"><span class="dot"></span> Стабильно · Быстро · Без ограничений</div>
+      <h1>Поток света<br />и энергии.<br /><span class="grad">Без границ.</span></h1>
+      <p class="lead">LumexVPN открывает вам свободный и безопасный доступ к интернету. Работает на всех ваших устройствах.</p>
+      <a class="btn btn-primary" href="#apps">Подключить LumexVPN <svg width="16" height="16"><use href="#i-arrow"/></svg></a>
 
-          <div class="hero-features">
-            <div class="hero-feature">
-              <div class="hero-feature-icon i-pink"><svg><use href="#i-streak"/></svg></div>
-              <span>Высокая<br />скорость</span>
-            </div>
-            <div class="hero-feature">
-              <div class="hero-feature-icon i-orange"><svg><use href="#i-infinity"/></svg></div>
-              <span>Стабильное<br />соединение</span>
-            </div>
-            <div class="hero-feature">
-              <div class="hero-feature-icon i-purple"><svg><use href="#i-lock"/></svg></div>
-              <span>Ваша<br />приватность</span>
-            </div>
-            <div class="hero-feature">
-              <div class="hero-feature-icon i-cyan"><svg><use href="#i-mesh"/></svg></div>
-              <span>Доступ без<br />ограничений</span>
-            </div>
-          </div>
+      <div class="hero-features">
+        <div class="hero-feature">
+          <div class="hero-feature-icon i-pink"><svg><use href="#i-streak"/></svg></div>
+          <span>Высокая<br />скорость</span>
         </div>
-
-        <div class="hero-devices" aria-hidden="true">
-          <div class="device device-tablet">
-            <div class="device-screen"></div>
-          </div>
-          <div class="device device-laptop">
-            <div class="device-screen"></div>
-            <div class="laptop-base"></div>
-          </div>
-          <div class="device device-phone">
-            <div class="device-notch"></div>
-            <div class="device-screen"></div>
-          </div>
+        <div class="hero-feature">
+          <div class="hero-feature-icon i-orange"><svg><use href="#i-infinity"/></svg></div>
+          <span>Стабильное<br />соединение</span>
+        </div>
+        <div class="hero-feature">
+          <div class="hero-feature-icon i-purple"><svg><use href="#i-lock"/></svg></div>
+          <span>Ваша<br />приватность</span>
+        </div>
+        <div class="hero-feature">
+          <div class="hero-feature-icon i-cyan"><svg><use href="#i-mesh"/></svg></div>
+          <span>Доступ без<br />ограничений</span>
         </div>
       </div>
     </div>
@@ -921,7 +825,6 @@
               <p>И ещё несколько вариантов</p>
             </div>
           </div>
-          <p class="payment-note">Способы оплаты и ссылки на скачивание временные — появятся в ближайшее время.</p>
         </div>
 
         <div class="pricing-card">
@@ -941,6 +844,7 @@
           <div class="pricing-note"><svg><use href="#i-lock"/></svg> Безопасная оплата. Ваши данные защищены.</div>
         </div>
       </div>
+      <p class="payment-note">Способы оплаты и ссылки на скачивание временные — появятся в ближайшее время.</p>
     </div>
   </section>
 
