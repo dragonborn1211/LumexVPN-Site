@@ -47,7 +47,8 @@
     { edge: 'magenta', pts: [
       [770, -40, 62, 'magenta', 0], [705, 110, 42, 'pink', 0.05], [652, 228, 14, 'orange', 0.35],
       [625, 288, 5, 'amber', 1], [520, 322, 13, 'orange', 0.5], [392, 370, 22, 'red', 0.1],
-      [306, 432, 28, 'red', 0], [352, 490, 22, 'red', 0], [520, 524, 16, 'red', 0.1],
+      [322, 402, 26, 'red', 0], [284, 446, 28, 'red', 0], [290, 486, 26, 'red', 0],
+      [336, 512, 22, 'red', 0], [420, 522, 18, 'red', 0.05], [520, 524, 16, 'red', 0.1],
       [680, 566, 18, 'pink', 0.2], [722, 588, 17, 'pink', 0.28], [746, 626, 16, 'pink', 0.35],
       [740, 664, 14, 'pink', 0.33], [706, 690, 12, 'pink', 0.3],
       [585, 712, 7, 'orange', 0.75], [482, 738, 11, 'orange', 0.5], [452, 792, 13, 'orange', 0.6],
@@ -493,7 +494,7 @@
       S.k[q] = best;
     }
     // A bundle wider than its turning radius bunches up into a crease on the inside of the turn.
-    // Through tight turns the whole bundle narrows instead (fibres reach ~half the radius), easing
+    // Through tight turns the whole bundle narrows instead (fibres reach ~2/3 of the radius), easing
     // in and out over a few dozen pixels so it reads as a smooth pinch.
     // The glow lines do the same, from the (eased) turning radius kept in S.rad.
     function ease(src, dst) {
@@ -510,7 +511,7 @@
       }
     }
     var lim = new Float32Array(m), eased = new Float32Array(m);
-    for (q = 0; q < m; q++) lim[q] = Math.min(S.sp[q], 0.34 / (Math.abs(S.k[q]) + 1e-6));
+    for (q = 0; q < m; q++) lim[q] = Math.min(S.sp[q], 0.5 / (Math.abs(S.k[q]) + 1e-6));
     ease(lim, eased);
     for (q = 0; q < m; q++) S.sp[q] = Math.min(S.sp[q], eased[q]);
     S.rad = new Float32Array(m);
@@ -534,7 +535,7 @@
         V[0] = S.x[i]; V[1] = S.y[i]; V[2] = S.nx[i]; V[3] = S.ny[i];
         V[4] = S.sp[i]; V[5] = S.s[i]; V[6] = side; V[7] = S.k[i];
         V[8] = tmpB[0]; V[9] = tmpB[1]; V[10] = tmpB[2]; V[11] = a;
-        V[12] = o.kind > 0.5 ? Math.max(0.12, Math.min(1, 0.6 * S.rad[i] / o.hw)) : o.b; V[13] = o.amp; V[14] = o.k; V[15] = o.hw;
+        V[12] = o.kind > 0.5 ? Math.max(0.2, Math.min(1, 0.85 * S.rad[i] / o.hw)) : o.b; V[13] = o.amp; V[14] = o.k; V[15] = o.hw;
         V[16] = o.ph; V[17] = o.kind; V[18] = o.spd; V[19] = o.seed;
         vtx();
       }
