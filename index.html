@@ -990,22 +990,42 @@
 </div>
 
 <script>
+// Animated backdrop modeled on the logo: a white-hot core with a warm ray-fan
+// flaring up-right and a cool tail sweeping down-right, plus comet particles
+// and periodic supernova pulses (shockwave + flash + particle burst).
 (function () {
   var canvas = document.getElementById('aurora');
   if (!canvas || !canvas.getContext) return;
   var ctx = canvas.getContext('2d');
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var colors = ['#FF4D8D', '#FF9A00', '#9B5CFF', '#00E5FF'];
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
-  var w = 0, h = 0;
+  var w = 0, h = 0, isSmall = false;
+  var rafId = null, lastTime = 0, lastSpawn = 0, lastPulse = 0;
+  var PULSE_INTERVAL = 6000;
+
+  var PINK = [255, 77, 141], ORANGE = [255, 154, 0], PURPLE = [155, 92, 255], CYAN = [0, 229, 255];
+  var WHITE = [255, 255, 255];
+
+  // Warm fan flaring up-right from the core (mirrors the logo's frayed upper rays)
+  var FAN = [
+    { angle: -84, bow: -0.22, rgb: PINK },
+    { angle: -68, bow: -0.08, rgb: ORANGE },
+    { angle: -52, bow: 0.02, rgb: PINK },
+    { angle: -36, bow: 0.10, rgb: ORANGE },
+    { angle: -20, bow: 0.16, rgb: PINK }
+  ];
+  // Incoming warm spine (bottom-left) and outgoing cool tail (right, dipping down)
+  var SPINE_IN = { angle: 204, rgb: ORANGE };
+  var TAIL_OUT = { angle: 22, dipAngle: 42, rgb1: PURPLE, rgb2: CYAN };
+
+  var core = { x: 0, y: 0, t: Math.random() * 10 };
   var particles = [];
-  var maxParticles = 42;
-  var focal = { t: Math.random() * 10 };
-  var lastTime = 0, lastSpawn = 0, rafId = null;
+  var pulses = [];
 
   function resize() {
     w = window.innerWidth;
     h = window.innerHeight;
+    isSmall = w < 720;
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
     canvas.style.width = w + 'px';
@@ -1013,71 +1033,186 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function focalPoint(t) {
+  // Kept clear of the centered hero copy: hugging the left edge on desktop,
+  // tucked above the heading on narrow screens where text runs edge to edge.
+  function corePos(t) {
     return {
-      x: w * (0.5 + Math.sin(t * 1.3) * 0.24),
-      y: h * (0.28 + Math.cos(t * 0.8) * 0.10)
+      x: w * (isSmall ? 0.22 : 0.12) + Math.sin(t * 0.6) * w * 0.02,
+      y: h * (isSmall ? 0.10 : 0.32) + Math.cos(t * 0.5) * h * 0.02
     };
   }
 
-  function paintGlow(fx, fy) {
-    ctx.clearRect(0, 0, w, h);
-    var grad = ctx.createRadialGradient(fx, fy, 0, fx, fy, Math.max(w, h) * 0.55);
-    grad.addColorStop(0, 'rgba(155,92,255,0.12)');
-    grad.addColorStop(0.45, 'rgba(0,229,255,0.05)');
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grad;
+  function rgba(rgb, a) { return 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + a + ')'; }
+  function lerp(a, b, k) { return a + (b - a) * k; }
+  function mixRgb(a, b, k) { return [lerp(a[0], b[0], k), lerp(a[1], b[1], k), lerp(a[2], b[2], k)]; }
+
+  function drawCore(intensity) {
+    var haloR = Math.max(w, h) * 0.48 * intensity;
+    var g1 = ctx.createRadialGradient(core.x, core.y, 0, core.x, core.y, haloR);
+    g1.addColorStop(0, rgba(WHITE, 0.24 * intensity));
+    g1.addColorStop(0.12, rgba(PINK, 0.16 * intensity));
+    g1.addColorStop(0.35, rgba(PURPLE, 0.09 * intensity));
+    g1.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g1;
     ctx.fillRect(0, 0, w, h);
+
+    var baseR = Math.max(28, Math.min(w, h) * 0.032) * (isSmall ? 0.75 : 1);
+    var hotR = baseR * (1 + 0.6 * intensity);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.shadowColor = 'rgba(255,150,210,0.9)';
+    ctx.shadowBlur = hotR * 1.6;
+    var g2 = ctx.createRadialGradient(core.x, core.y, 0, core.x, core.y, hotR);
+    g2.addColorStop(0, rgba(WHITE, 1));
+    g2.addColorStop(0.4, rgba([255, 205, 230], 0.85 * intensity));
+    g2.addColorStop(0.75, rgba(PINK, 0.35 * intensity));
+    g2.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.beginPath();
+    ctx.fillStyle = g2;
+    ctx.arc(core.x, core.y, hotR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
-  function spawn(fx, fy) {
-    var angle = Math.random() * Math.PI * 2;
-    var speed = 0.5 + Math.random() * 1.3;
-    particles.push({
-      x: fx, y: fy,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: 0,
-      maxLife: 80 + Math.random() * 100,
-      color: colors[(Math.random() * colors.length) | 0],
-      width: 1 + Math.random() * 1.6
+  function strokeRay(endX, endY, midX, midY, colorNear, colorFar, width, alpha, glow) {
+    var grad = ctx.createLinearGradient(core.x, core.y, endX, endY);
+    grad.addColorStop(0, rgba(mixRgb(colorNear, WHITE, 0.6), alpha));
+    grad.addColorStop(0.22, rgba(mixRgb(colorNear, WHITE, 0.12), alpha * 0.95));
+    grad.addColorStop(0.6, rgba(mixRgb(colorNear, colorFar, 0.7), alpha * 0.5));
+    grad.addColorStop(1, rgba(colorFar, 0));
+    ctx.save();
+    ctx.shadowColor = rgba(colorNear, Math.min(1, alpha + 0.15));
+    ctx.shadowBlur = glow;
+    ctx.beginPath();
+    ctx.moveTo(core.x, core.y);
+    ctx.quadraticCurveTo(midX, midY, endX, endY);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawRays(t, flash) {
+    ctx.globalCompositeOperation = 'lighter';
+    var len = Math.max(w, h) * (isSmall ? 0.6 : 0.78);
+    var scale = isSmall ? 0.7 : 1;
+
+    FAN.forEach(function (ray, i) {
+      var wobble = Math.sin(t * 0.5 + i * 1.9) * 3.5;
+      var ang = (ray.angle + wobble) * Math.PI / 180;
+      var perp = ang + Math.PI / 2;
+      var bow = (ray.bow + Math.sin(t * 0.35 + i) * 0.05) * len;
+      var midX = core.x + Math.cos(ang) * len * 0.5 + Math.cos(perp) * bow;
+      var midY = core.y + Math.sin(ang) * len * 0.5 + Math.sin(perp) * bow;
+      var endX = core.x + Math.cos(ang) * len;
+      var endY = core.y + Math.sin(ang) * len;
+      var width = (3.2 + i * 0.35 + flash * 3) * scale;
+      strokeRay(endX, endY, midX, midY, ray.rgb, ray.rgb, width, 0.8 + flash * 0.2, width * 4);
     });
+
+    // incoming warm spine (bottom-left), drawn as if flowing INTO the core
+    var inAng = (SPINE_IN.angle + Math.sin(t * 0.4) * 2) * Math.PI / 180;
+    var inLen = len * 1.05;
+    var inX = core.x + Math.cos(inAng) * inLen;
+    var inY = core.y + Math.sin(inAng) * inLen;
+    var inWidth = (4.5 + flash * 3) * scale;
+    strokeRay(inX, inY, (core.x + inX) / 2, (core.y + inY) / 2, ORANGE, ORANGE, inWidth, 0.85 + flash * 0.15, inWidth * 4);
+
+    // outgoing cool tail, dipping down before sweeping right (matches the logo's curve) — the boldest beam
+    var midAng = (TAIL_OUT.dipAngle + Math.sin(t * 0.3) * 3) * Math.PI / 180;
+    var endAng = (TAIL_OUT.angle + Math.sin(t * 0.45) * 3) * Math.PI / 180;
+    var tMidX = core.x + Math.cos(midAng) * len * 0.5;
+    var tMidY = core.y + Math.sin(midAng) * len * 0.5;
+    var tEndX = core.x + Math.cos(endAng) * len * 1.15;
+    var tEndY = core.y + Math.sin(endAng) * len * 1.15;
+    var tailWidth = (5.5 + flash * 3.5) * scale;
+    strokeRay(tEndX, tEndY, tMidX, tMidY, PURPLE, CYAN, tailWidth, 0.9 + flash * 0.1, tailWidth * 4);
+
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function rayDirections() {
+    var dirs = FAN.map(function (r) { return r.angle; });
+    dirs.push(SPINE_IN.angle, TAIL_OUT.angle, (TAIL_OUT.angle + TAIL_OUT.dipAngle) / 2);
+    return dirs;
+  }
+  var DIRS = rayDirections();
+  var DIR_COLORS = [PINK, ORANGE, PINK, ORANGE, PINK, ORANGE, PURPLE, CYAN];
+
+  function spawnParticle(burst) {
+    var idx = (Math.random() * DIRS.length) | 0;
+    var ang = (DIRS[idx] + (Math.random() - 0.5) * 16) * Math.PI / 180;
+    var speed = burst ? (2.4 + Math.random() * 2.8) : (0.6 + Math.random() * 1.4);
+    particles.push({
+      x: core.x, y: core.y,
+      vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed,
+      life: 0, maxLife: (burst ? 46 : 85) + Math.random() * 70,
+      rgb: DIR_COLORS[idx],
+      width: burst ? (1.3 + Math.random() * 1.8) : (0.8 + Math.random() * 1.2)
+    });
+  }
+
+  function triggerPulse(ts) {
+    pulses.push({ born: ts });
+    var n = isSmall ? 16 : 28;
+    for (var i = 0; i < n; i++) spawnParticle(true);
   }
 
   function draw(ts) {
     var dt = lastTime ? ts - lastTime : 16;
+    if (dt > 100) dt = 16;
     lastTime = ts;
+    core.t += dt * 0.001;
+    var pos = corePos(core.t);
+    core.x = pos.x; core.y = pos.y;
 
-    focal.t += dt * 0.00005;
-    var f = focalPoint(focal.t);
-    paintGlow(f.x, f.y);
-
-    if (ts - lastSpawn > 60 && particles.length < maxParticles) {
-      spawn(f.x, f.y);
-      lastSpawn = ts;
+    if (ts - lastPulse > PULSE_INTERVAL) {
+      lastPulse = ts;
+      triggerPulse(ts);
     }
+    var since = ts - lastPulse;
+    var flash = Math.max(0, 1 - since / 280);
+
+    ctx.clearRect(0, 0, w, h);
+    drawCore(1 + flash * 1.3);
+    drawRays(core.t, flash);
 
     ctx.globalCompositeOperation = 'lighter';
-    for (var i = particles.length - 1; i >= 0; i--) {
-      var p = particles[i];
-      p.life += dt / 16.7;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vx *= 0.994;
-      p.vy *= 0.994;
-      var r = p.life / p.maxLife;
-      if (r >= 1) { particles.splice(i, 1); continue; }
-      var alpha = Math.sin(r * Math.PI) * 0.5;
+    for (var i = pulses.length - 1; i >= 0; i--) {
+      var p = pulses[i];
+      var age = ts - p.born;
+      var r = age * (isSmall ? 0.32 : 0.42);
+      var a = Math.max(0, 0.45 - age / 950);
+      if (a <= 0) { pulses.splice(i, 1); continue; }
       ctx.beginPath();
-      ctx.moveTo(p.x - p.vx * 7, p.y - p.vy * 7);
-      ctx.lineTo(p.x, p.y);
-      ctx.strokeStyle = p.color;
-      ctx.globalAlpha = alpha;
-      ctx.lineWidth = p.width;
+      ctx.arc(core.x, core.y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = rgba(WHITE, a);
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+    }
+
+    var maxParticles = isSmall ? 55 : 110;
+    if (ts - lastSpawn > 70 && particles.length < maxParticles) {
+      spawnParticle(false);
+      lastSpawn = ts;
+    }
+    for (var j = particles.length - 1; j >= 0; j--) {
+      var pt = particles[j];
+      pt.life += dt / 16.7;
+      pt.x += pt.vx; pt.y += pt.vy;
+      pt.vx *= 0.995; pt.vy *= 0.995;
+      var lr = pt.life / pt.maxLife;
+      if (lr >= 1) { particles.splice(j, 1); continue; }
+      var alpha = Math.sin(lr * Math.PI) * 0.6;
+      ctx.beginPath();
+      ctx.moveTo(pt.x - pt.vx * 6, pt.y - pt.vy * 6);
+      ctx.lineTo(pt.x, pt.y);
+      ctx.strokeStyle = rgba(pt.rgb, alpha);
+      ctx.lineWidth = pt.width;
       ctx.lineCap = 'round';
       ctx.stroke();
     }
-    ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
 
     rafId = requestAnimationFrame(draw);
@@ -1095,20 +1230,23 @@
       rafId = null;
     }
   }
+  function drawStatic() {
+    var pos = corePos(core.t);
+    core.x = pos.x; core.y = pos.y;
+    ctx.clearRect(0, 0, w, h);
+    drawCore(1);
+    drawRays(core.t, 0);
+  }
 
   resize();
-  window.addEventListener('resize', resize);
 
   if (reduceMotion) {
-    var f0 = focalPoint(focal.t);
-    paintGlow(f0.x, f0.y);
-    window.addEventListener('resize', function () {
-      var f = focalPoint(focal.t);
-      paintGlow(f.x, f.y);
-    });
+    drawStatic();
+    window.addEventListener('resize', function () { resize(); drawStatic(); });
     return;
   }
 
+  window.addEventListener('resize', resize);
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) stop(); else start();
   });
