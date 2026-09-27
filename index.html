@@ -50,14 +50,18 @@
   }
   section { position: relative; }
 
-  /* Background glow blobs */
-  .glow {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(90px);
-    opacity: 0.35;
-    pointer-events: none;
+  /* Animated aurora backdrop */
+  #aurora {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
     z-index: 0;
+    pointer-events: none;
+  }
+  .page {
+    position: relative;
+    z-index: 1;
   }
 
   /* ---------- Header ---------- */
@@ -275,6 +279,26 @@
     border-color: rgba(255,255,255,0.16);
     transform: translateY(-3px);
   }
+  /* Shared glowing icon badge — used by feature/app/payment icons */
+  .feature-icon, .app-icon, .pay-icon {
+    position: relative;
+    isolation: isolate;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--divider);
+  }
+  .feature-icon::before, .app-icon::before, .pay-icon::before {
+    content: '';
+    position: absolute;
+    inset: -60%;
+    background: radial-gradient(circle, var(--accent, var(--purple)) 0%, transparent 70%);
+    filter: blur(16px);
+    opacity: 0.55;
+    z-index: -1;
+  }
+  .i-pink { --accent: var(--pink); }
+  .i-orange { --accent: var(--orange); }
+  .i-purple { --accent: var(--purple); }
+  .i-cyan { --accent: var(--cyan); }
   .feature-icon {
     width: 46px;
     height: 46px;
@@ -284,11 +308,7 @@
     justify-content: center;
     margin-bottom: 18px;
   }
-  .feature-icon svg { width: 22px; height: 22px; }
-  .feature-icon.i-pink { background: rgba(255,77,141,0.12); color: var(--pink); }
-  .feature-icon.i-orange { background: rgba(255,154,0,0.12); color: var(--orange); }
-  .feature-icon.i-purple { background: rgba(155,92,255,0.12); color: var(--purple); }
-  .feature-icon.i-cyan { background: rgba(0,229,255,0.12); color: var(--cyan); }
+  .feature-icon svg { width: 22px; height: 22px; position: relative; z-index: 1; }
   .feature-card h3 {
     font-size: 16px;
     font-weight: 700;
@@ -337,10 +357,8 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--divider);
   }
-  .app-icon svg { width: 24px; height: 24px; }
+  .app-icon svg { width: 24px; height: 24px; position: relative; z-index: 1; }
   .app-meta h3 {
     font-size: 16px;
     font-weight: 700;
@@ -407,10 +425,8 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    background: linear-gradient(135deg, rgba(255,77,141,0.15), rgba(155,92,255,0.15));
-    color: #fff;
   }
-  .pay-icon svg { width: 22px; height: 22px; }
+  .pay-icon svg { width: 22px; height: 22px; position: relative; z-index: 1; }
   .pay-info { flex-grow: 1; min-width: 0; }
   .pay-info h3 {
     font-size: 15px;
@@ -559,94 +575,118 @@
 </head>
 <body>
 
-<!-- Icon sprite -->
-<svg style="display:none" aria-hidden="true">
-  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<canvas id="aurora" aria-hidden="true"></canvas>
+
+<!-- Icon sprite — line art in the brand streak gradient (pink → purple → cyan) -->
+<!-- Hidden via zero size + overflow, not display:none — some browsers won't render <use> against a display:none source -->
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;">
+  <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF4D8D"/>
+      <stop offset="50%" stop-color="#9B5CFF"/>
+      <stop offset="100%" stop-color="#00E5FF"/>
+    </linearGradient>
+  </defs>
+  <!-- shield with an energy-streak core -->
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 2 4 5v6c0 5 3.4 8.7 8 11 4.6-2.3 8-6 8-11V5l-8-3Z"/>
+    <path d="M13 8 10 12.2h2.4L11 16l4-4.4h-2.2L13 8Z" fill="url(#iconGrad)" stroke="none"/>
   </symbol>
-  <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/>
+  <!-- twin light-streaks converging to a bright point, echoing the logo -->
+  <symbol id="i-streak" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 18C7 14 9 10 12 5" opacity="0.5"/>
+    <path d="M6 16C9 12.5 10.5 9.5 13 6"/>
+    <circle cx="13.2" cy="5.7" r="1.7" fill="url(#iconGrad)" stroke="none"/>
   </symbol>
-  <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M3 3l18 18"/>
-    <path d="M10.6 10.7a2 2 0 0 0 2.7 2.7"/>
-    <path d="M6.2 6.6C4 8.1 2.5 10.1 2 12c1.4 4.4 5.6 8 10 8 1.7 0 3.3-.4 4.7-1.2"/>
-    <path d="M9.9 4.2A9.9 9.9 0 0 1 12 4c4.4 0 8.6 3.6 10 8-.5 1.4-1.2 2.7-2.2 3.8"/>
+  <!-- eye with a spark iris, slashed for "no visibility into your traffic" -->
+  <symbol id="i-no-trace" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2 12c1.8-4 5.6-7 10-7s8.2 3 10 7c-1.8 4-5.6 7-10 7S3.8 16 2 12Z" opacity="0.6"/>
+    <circle cx="12" cy="12" r="1.8" fill="url(#iconGrad)" stroke="none"/>
+    <path d="M4 5 20 19" stroke-width="2.2"/>
   </symbol>
-  <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="9"/>
-    <path d="M3 12h18"/>
-    <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18Z"/>
+  <!-- orbiting server mesh instead of a flat globe -->
+  <symbol id="i-mesh" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(20 12 12)"/>
+    <ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(-20 12 12)"/>
+    <circle cx="12" cy="12" r="2" fill="url(#iconGrad)" stroke="none"/>
+    <circle cx="21.3" cy="9.2" r="1.1" fill="url(#iconGrad)" stroke="none"/>
+    <circle cx="2.7" cy="14.8" r="1.1" fill="url(#iconGrad)" stroke="none"/>
   </symbol>
-  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="4" y="10" width="16" height="10" rx="2"/>
-    <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+  <!-- padlock with a spark of energy -->
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="4" y="10" width="14" height="10" rx="2"/>
+    <path d="M7.5 10V7a3.5 3.5 0 0 1 7 0v3"/>
+    <path d="M19.5 3.2 20.1 5l1.7.5-1.7.5-.6 1.8-.6-1.8L17.2 5.5l1.7-.5Z" fill="url(#iconGrad)" stroke="none"/>
   </symbol>
-  <symbol id="i-smartphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-smartphone" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="6" y="2" width="12" height="20" rx="2.5"/>
     <path d="M11 18h2"/>
+    <circle cx="18.4" cy="4.2" r="1" fill="url(#iconGrad)" stroke="none"/>
   </symbol>
-  <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="4" width="20" height="13" rx="2"/>
     <path d="M8 21h8"/>
     <path d="M12 17v4"/>
+    <circle cx="19.4" cy="6.6" r="1" fill="url(#iconGrad)" stroke="none"/>
   </symbol>
-  <symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="4" width="20" height="16" rx="2"/>
     <path d="m6 9 3 3-3 3"/>
     <path d="M12 15h6"/>
   </symbol>
-  <symbol id="i-puzzle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-puzzle" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M9 3h4a1 1 0 0 1 1 1v2.2a1.8 1.8 0 1 0 0 3.6V12a1 1 0 0 1-1 1h-2.2a1.8 1.8 0 1 0-3.6 0H5a1 1 0 0 1-1-1V9a1.8 1.8 0 1 0 0-3.6V4a1 1 0 0 1 1-1h2.2A1.8 1.8 0 1 0 9 3Z"/>
     <path d="M14 13v2.2a1.8 1.8 0 1 1 3.6 0H20a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1h-2.8a1.8 1.8 0 1 1-3.6 0H12a1 1 0 0 1-1-1v-3h1a2 2 0 0 0 2-2Z"/>
   </symbol>
+  <!-- kept as currentColor: this one sits on solid/gradient buttons, not the dark background, so it needs to match the button's text color rather than the brand gradient -->
   <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 3v12"/>
     <path d="m7 10 5 5 5-5"/>
     <path d="M4 21h16"/>
   </symbol>
-  <symbol id="i-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-card" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="5" width="20" height="14" rx="2.5"/>
     <path d="M2 10h20"/>
     <path d="M6 15h4"/>
   </symbol>
-  <symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="12" r="9"/>
-    <path d="M13 7 9 13h3l-1 4 4-6h-3l1-4Z" fill="currentColor" stroke="none"/>
+    <path d="M13 7 9 13h3l-1 4 4-6h-3l1-4Z" fill="url(#iconGrad)" stroke="none"/>
   </symbol>
-  <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/>
     <rect x="3" y="7" width="18" height="13" rx="2"/>
     <path d="M16 13.5h2.5"/>
   </symbol>
-  <symbol id="i-coins" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-coins" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="9" cy="9" r="6"/>
     <path d="M14.5 9.5A6 6 0 1 1 9.5 14.5"/>
     <path d="M15 15a6 6 0 1 0 6-6"/>
   </symbol>
-  <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="m12 3 2.6 5.8 6.2.6-4.7 4.2 1.4 6.2-5.5-3.3-5.5 3.3 1.4-6.2-4.7-4.2 6.2-.6L12 3Z"/>
   </symbol>
-  <symbol id="i-contactless" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-contactless" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="3" y="5" width="12" height="16" rx="2"/>
     <path d="M18 9a5 5 0 0 1 0 8"/>
     <path d="M21 6a9 9 0 0 1 0 14"/>
   </symbol>
-  <symbol id="i-telegram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-telegram" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="m21 4-9 17-2-8-8-2 19-7Z"/>
     <path d="M10 13 21 4"/>
   </symbol>
-  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M4 4 20 20"/>
     <path d="M20 4 4 20"/>
   </symbol>
-  <symbol id="i-instagram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <symbol id="i-instagram" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="5"/>
     <circle cx="12" cy="12" r="4"/>
-    <circle cx="17.3" cy="6.7" r="0.6" fill="currentColor" stroke="none"/>
+    <circle cx="17.3" cy="6.7" r="0.6" fill="url(#iconGrad)" stroke="none"/>
   </symbol>
 </svg>
 
+<div class="page">
 <header>
   <div class="wrap nav">
     <a class="brand" href="/">
@@ -669,9 +709,6 @@
 
   <!-- Hero -->
   <section class="hero">
-    <div class="glow" style="width:520px;height:520px;top:-180px;left:50%;transform:translateX(-70%);background:var(--pink);"></div>
-    <div class="glow" style="width:480px;height:480px;top:-120px;left:60%;background:var(--purple);"></div>
-    <div class="glow" style="width:420px;height:420px;top:60px;left:80%;background:var(--cyan);opacity:0.22;"></div>
     <div class="wrap" style="position:relative;z-index:1;">
       <div class="eyebrow"><span class="dot"></span> VPN нового поколения</div>
       <h1>Быстрый и безопасный<br />VPN без границ</h1>
@@ -681,9 +718,9 @@
         <a class="btn btn-outline" href="#payment">Способы оплаты</a>
       </div>
       <div class="chips">
-        <span class="chip"><svg><use href="#i-eye-off"/></svg> Без логов</span>
+        <span class="chip"><svg><use href="#i-no-trace"/></svg> Без логов</span>
         <span class="chip"><svg><use href="#i-lock"/></svg> Шифрование AES-256</span>
-        <span class="chip"><svg><use href="#i-globe"/></svg> Серверы по всему миру</span>
+        <span class="chip"><svg><use href="#i-mesh"/></svg> Серверы по всему миру</span>
       </div>
     </div>
   </section>
@@ -698,7 +735,7 @@
       </div>
       <div class="features-grid">
         <div class="feature-card">
-          <div class="feature-icon i-pink"><svg><use href="#i-zap"/></svg></div>
+          <div class="feature-icon i-pink"><svg><use href="#i-streak"/></svg></div>
           <h3>Молниеносная скорость</h3>
           <p>Смотрите, играйте и работайте без задержек — соединение не тормозит трафик.</p>
         </div>
@@ -708,12 +745,12 @@
           <p>AES-256 защищает трафик так, что его не увидит ни провайдер, ни злоумышленник.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon i-purple"><svg><use href="#i-eye-off"/></svg></div>
+          <div class="feature-icon i-purple"><svg><use href="#i-no-trace"/></svg></div>
           <h3>Ноль логов</h3>
           <p>Мы не храним историю посещений и не передаём данные о вашей активности третьим лицам.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon i-cyan"><svg><use href="#i-globe"/></svg></div>
+          <div class="feature-icon i-cyan"><svg><use href="#i-mesh"/></svg></div>
           <h3>Серверы по всему миру</h3>
           <p>Подключайтесь к ближайшей точке и получайте стабильное соединение из любой точки мира.</p>
         </div>
@@ -733,7 +770,7 @@
 
         <div class="app-card">
           <div class="app-top">
-            <div class="app-icon"><svg><use href="#i-smartphone"/></svg></div>
+            <div class="app-icon i-pink"><svg><use href="#i-smartphone"/></svg></div>
             <div class="app-meta">
               <h3>Android</h3>
               <span>APK · Google Play</span>
@@ -748,7 +785,7 @@
 
         <div class="app-card">
           <div class="app-top">
-            <div class="app-icon"><svg><use href="#i-smartphone"/></svg></div>
+            <div class="app-icon i-orange"><svg><use href="#i-smartphone"/></svg></div>
             <div class="app-meta">
               <h3>iOS</h3>
               <span>App Store</span>
@@ -762,7 +799,7 @@
 
         <div class="app-card">
           <div class="app-top">
-            <div class="app-icon"><svg><use href="#i-monitor"/></svg></div>
+            <div class="app-icon i-purple"><svg><use href="#i-monitor"/></svg></div>
             <div class="app-meta">
               <h3>Windows</h3>
               <span>.exe</span>
@@ -776,7 +813,7 @@
 
         <div class="app-card">
           <div class="app-top">
-            <div class="app-icon"><svg><use href="#i-monitor"/></svg></div>
+            <div class="app-icon i-cyan"><svg><use href="#i-monitor"/></svg></div>
             <div class="app-meta">
               <h3>macOS</h3>
               <span>.dmg</span>
@@ -790,7 +827,7 @@
 
         <div class="app-card">
           <div class="app-top">
-            <div class="app-icon"><svg><use href="#i-terminal"/></svg></div>
+            <div class="app-icon i-pink"><svg><use href="#i-terminal"/></svg></div>
             <div class="app-meta">
               <h3>Linux</h3>
               <span>.AppImage · .deb</span>
@@ -804,7 +841,7 @@
 
         <div class="app-card">
           <div class="app-top">
-            <div class="app-icon"><svg><use href="#i-puzzle"/></svg></div>
+            <div class="app-icon i-orange"><svg><use href="#i-puzzle"/></svg></div>
             <div class="app-meta">
               <h3>Расширение</h3>
               <span>Chrome · Firefox</span>
@@ -832,7 +869,7 @@
       <div class="payment-grid">
 
         <div class="pay-card">
-          <div class="pay-icon"><svg><use href="#i-card"/></svg></div>
+          <div class="pay-icon i-pink"><svg><use href="#i-card"/></svg></div>
           <div class="pay-info">
             <h3>Банковские карты</h3>
             <p>Visa, Mastercard, МИР</p>
@@ -841,7 +878,7 @@
         </div>
 
         <div class="pay-card">
-          <div class="pay-icon"><svg><use href="#i-bolt"/></svg></div>
+          <div class="pay-icon i-orange"><svg><use href="#i-bolt"/></svg></div>
           <div class="pay-info">
             <h3>СБП</h3>
             <p>Система быстрых платежей</p>
@@ -850,7 +887,7 @@
         </div>
 
         <div class="pay-card">
-          <div class="pay-icon"><svg><use href="#i-wallet"/></svg></div>
+          <div class="pay-icon i-purple"><svg><use href="#i-wallet"/></svg></div>
           <div class="pay-info">
             <h3>ЮMoney</h3>
             <p>Электронный кошелёк</p>
@@ -859,7 +896,7 @@
         </div>
 
         <div class="pay-card">
-          <div class="pay-icon"><svg><use href="#i-coins"/></svg></div>
+          <div class="pay-icon i-cyan"><svg><use href="#i-coins"/></svg></div>
           <div class="pay-info">
             <h3>Криптовалюта</h3>
             <p>USDT, BTC, TON</p>
@@ -868,7 +905,7 @@
         </div>
 
         <div class="pay-card">
-          <div class="pay-icon"><svg><use href="#i-star"/></svg></div>
+          <div class="pay-icon i-pink"><svg><use href="#i-star"/></svg></div>
           <div class="pay-info">
             <h3>Telegram Stars</h3>
             <p>Оплата прямо в Telegram</p>
@@ -877,7 +914,7 @@
         </div>
 
         <div class="pay-card">
-          <div class="pay-icon"><svg><use href="#i-contactless"/></svg></div>
+          <div class="pay-icon i-orange"><svg><use href="#i-contactless"/></svg></div>
           <div class="pay-info">
             <h3>Apple Pay / Google Pay</h3>
             <p>Оплата в один тап</p>
@@ -894,8 +931,6 @@
   <section class="cta">
     <div class="wrap">
       <div class="cta-box">
-        <div class="glow" style="width:360px;height:360px;top:-140px;left:10%;background:var(--purple);"></div>
-        <div class="glow" style="width:360px;height:360px;bottom:-160px;right:10%;background:var(--cyan);"></div>
         <div style="position:relative;z-index:1;">
           <h2>Готовы обезопасить свой интернет?</h2>
           <p>Скачайте LumexVPN и подключитесь за пару минут.</p>
@@ -952,6 +987,135 @@
     </div>
   </div>
 </footer>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById('aurora');
+  if (!canvas || !canvas.getContext) return;
+  var ctx = canvas.getContext('2d');
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var colors = ['#FF4D8D', '#FF9A00', '#9B5CFF', '#00E5FF'];
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var w = 0, h = 0;
+  var particles = [];
+  var maxParticles = 42;
+  var focal = { t: Math.random() * 10 };
+  var lastTime = 0, lastSpawn = 0, rafId = null;
+
+  function resize() {
+    w = window.innerWidth;
+    h = window.innerHeight;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function focalPoint(t) {
+    return {
+      x: w * (0.5 + Math.sin(t * 1.3) * 0.24),
+      y: h * (0.28 + Math.cos(t * 0.8) * 0.10)
+    };
+  }
+
+  function paintGlow(fx, fy) {
+    ctx.clearRect(0, 0, w, h);
+    var grad = ctx.createRadialGradient(fx, fy, 0, fx, fy, Math.max(w, h) * 0.55);
+    grad.addColorStop(0, 'rgba(155,92,255,0.12)');
+    grad.addColorStop(0.45, 'rgba(0,229,255,0.05)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  function spawn(fx, fy) {
+    var angle = Math.random() * Math.PI * 2;
+    var speed = 0.5 + Math.random() * 1.3;
+    particles.push({
+      x: fx, y: fy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 0,
+      maxLife: 80 + Math.random() * 100,
+      color: colors[(Math.random() * colors.length) | 0],
+      width: 1 + Math.random() * 1.6
+    });
+  }
+
+  function draw(ts) {
+    var dt = lastTime ? ts - lastTime : 16;
+    lastTime = ts;
+
+    focal.t += dt * 0.00005;
+    var f = focalPoint(focal.t);
+    paintGlow(f.x, f.y);
+
+    if (ts - lastSpawn > 60 && particles.length < maxParticles) {
+      spawn(f.x, f.y);
+      lastSpawn = ts;
+    }
+
+    ctx.globalCompositeOperation = 'lighter';
+    for (var i = particles.length - 1; i >= 0; i--) {
+      var p = particles[i];
+      p.life += dt / 16.7;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vx *= 0.994;
+      p.vy *= 0.994;
+      var r = p.life / p.maxLife;
+      if (r >= 1) { particles.splice(i, 1); continue; }
+      var alpha = Math.sin(r * Math.PI) * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(p.x - p.vx * 7, p.y - p.vy * 7);
+      ctx.lineTo(p.x, p.y);
+      ctx.strokeStyle = p.color;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = p.width;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+
+    rafId = requestAnimationFrame(draw);
+  }
+
+  function start() {
+    if (rafId === null) {
+      lastTime = 0;
+      rafId = requestAnimationFrame(draw);
+    }
+  }
+  function stop() {
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+
+  if (reduceMotion) {
+    var f0 = focalPoint(focal.t);
+    paintGlow(f0.x, f0.y);
+    window.addEventListener('resize', function () {
+      var f = focalPoint(focal.t);
+      paintGlow(f.x, f.y);
+    });
+    return;
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stop(); else start();
+  });
+
+  if (!document.hidden) start();
+})();
+</script>
 
 </body>
 </html>
