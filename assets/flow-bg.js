@@ -1,9 +1,11 @@
 /* Animated flowing-light background.
-   A procedural WebGL redraw of assets/bg-flow.webp: stays sharp at any size and
-   pixel density, and moves — fibre bundles sway, pulses of light run along the
-   streams, sparks twinkle. Behind the streams sits deep space: nebula gas with dust
-   lanes, a star field and a few distant galaxies. It is kept dim, drawn first and
-   scrolls slower than the streams, so the light always stays on top.
+   Streams of light in the style of assets/bg-flow.webp, drawn with WebGL: sharp at any
+   size and pixel density, and moving — fibre bundles sway, pulses of light run along
+   the streams, sparks twinkle. The streams are laid out from the page itself: they are
+   routed through the free space between cards, buttons and lines of text, narrow where
+   it gets tight and meet in bright crossings, so they flow around the content instead
+   of behind it. Behind them sits deep space: nebula gas with dust lanes, a star field,
+   galaxies and the odd supernova; it scrolls slower than the page, which reads as depth.
    Without WebGL the page keeps the static image. */
 (function () {
   'use strict';
@@ -22,8 +24,7 @@
   if (!gl) { fallback(); return; }
 
   var REDUCE = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  var PARALLAX = 0.85;
-  var IMG_W = 866, IMG_H = 1816; // pixel space of the artwork the streams were traced from
+  var CELL = 12; // step (CSS px) of the free-space grid the streams are routed through
   var BG = [10 / 255, 14 / 255, 26 / 255];
 
   var COL = {
@@ -37,42 +38,6 @@
     amber:   [1.00, 0.70, 0.32],
     white:   [1.00, 0.95, 0.90]
   };
-
-  // Control points: [x, y, bundle half-width, colour, hotness 0..1 (1 = white-hot crossing)]
-  var STREAMS = [
-    { edge: 'blue', fadeIn: true, pts: [
-      [430, -60, 40, 'blue', 0], [482, 40, 44, 'blue', 0], [542, 140, 32, 'purple', 0],
-      [594, 226, 15, 'pink', 0.25], [628, 287, 5, 'amber', 1], [735, 290, 18, 'purple', 0.35],
-      [860, 305, 46, 'blue', 0.05], [990, 350, 70, 'cyan', 0]] },
-    { edge: 'magenta', pts: [
-      [770, -40, 62, 'magenta', 0], [705, 110, 42, 'pink', 0.05], [652, 228, 14, 'orange', 0.35],
-      [625, 288, 5, 'amber', 1], [520, 322, 13, 'orange', 0.5], [392, 370, 22, 'red', 0.1],
-      [306, 432, 28, 'red', 0], [352, 490, 22, 'red', 0], [520, 524, 16, 'red', 0.1],
-      [680, 566, 18, 'pink', 0.2], [742, 632, 16, 'pink', 0.35], [706, 690, 12, 'pink', 0.3],
-      [585, 712, 7, 'orange', 0.75], [482, 738, 11, 'orange', 0.5], [452, 792, 13, 'orange', 0.6],
-      [512, 860, 18, 'orange', 0.3], [645, 915, 24, 'red', 0.1], [795, 975, 34, 'red', 0],
-      [950, 1035, 50, 'purple', 0]] },
-    { edge: 'purple', fadeOut: true, pts: [
-      [-60, 585, 30, 'purple', 0], [140, 598, 28, 'magenta', 0], [330, 648, 20, 'pink', 0.1],
-      [500, 700, 10, 'pink', 0.45], [612, 713, 6, 'pink', 0.6], [720, 698, 14, 'pink', 0.15]] },
-    { edge: 'purple', fadeIn: true, pts: [
-      [505, 905, 22, 'red', 0], [610, 990, 18, 'red', 0.1], [682, 1072, 14, 'orange', 0.25],
-      [695, 1142, 11, 'orange', 0.45], [662, 1192, 8, 'orange', 0.65], [616, 1213, 5, 'amber', 1],
-      [702, 1246, 16, 'cyan', 0.3], [792, 1292, 30, 'blue', 0.05], [905, 1348, 50, 'blue', 0]] },
-    { edge: 'purple', fadeOut: true, pts: [
-      [-60, 1110, 28, 'purple', 0], [160, 1135, 26, 'magenta', 0], [390, 1168, 18, 'pink', 0.1],
-      [560, 1204, 8, 'pink', 0.5], [618, 1215, 5, 'amber', 1], [682, 1266, 16, 'purple', 0.2],
-      [722, 1352, 26, 'purple', 0], [752, 1455, 32, 'blue', 0]] },
-    { edge: 'blue', fadeOut: true, pts: [
-      [-60, 1395, 30, 'blue', 0], [180, 1405, 30, 'purple', 0], [362, 1456, 24, 'purple', 0],
-      [450, 1540, 20, 'magenta', 0], [440, 1612, 18, 'pink', 0.1]] },
-    { edge: 'purple', pts: [
-      [-60, 1625, 26, 'magenta', 0], [180, 1592, 22, 'pink', 0.1], [402, 1606, 14, 'orange', 0.6],
-      [522, 1648, 14, 'red', 0.2], [682, 1698, 22, 'magenta', 0], [862, 1745, 36, 'blue', 0],
-      [985, 1780, 50, 'blue', 0]] }
-  ];
-  // Bright crossings: [x, y, strength]
-  var NODES = [[626, 288, 1], [617, 1214, 1], [585, 712, 0.5], [455, 790, 0.4], [402, 1606, 0.45]];
 
   var VS = [
     'precision highp float;',
@@ -420,11 +385,12 @@
     return [l(b1x, b2x, t1, t2), l(b1y, b2y, t1, t2)];
   }
 
-  var STEP = 7, SUB = 24;
-  function sample(def, map) {
+  // def.pts: [x, y, bundle spread, rgb, hotness 0..1 (1 = white-hot crossing), free room around it], page px
+  var STEP = 7, SUB = 6;
+  function sample(def) {
     var P = def.pts, n = P.length, i, j;
     var cx = [], cy = [];
-    for (i = 0; i < n; i++) { cx.push(map.x(P[i][0])); cy.push(map.y(P[i][1])); }
+    for (i = 0; i < n; i++) { cx.push(P[i][0]); cy.push(P[i][1]); }
     var ex = [2 * cx[0] - cx[1]].concat(cx, [2 * cx[n - 1] - cx[n - 2]]);
     var ey = [2 * cy[0] - cy[1]].concat(cy, [2 * cy[n - 1] - cy[n - 2]]);
     var dx = [], dy = [], dseg = [], du = [];
@@ -443,7 +409,7 @@
       n: m, L: L,
       x: new Float32Array(m), y: new Float32Array(m), nx: new Float32Array(m), ny: new Float32Array(m),
       sp: new Float32Array(m), c: new Float32Array(m * 3), hot: new Float32Array(m), s: new Float32Array(m), fade: new Float32Array(m),
-      k: new Float32Array(m)
+      k: new Float32Array(m), room: new Float32Array(m)
     };
     var k = 0;
     for (var q = 0; q < m; q++) {
@@ -455,12 +421,13 @@
       var seg = dseg[k];
       var u = du[k] + ((dseg[k + 1] === seg ? du[k + 1] : 1) - du[k]) * f;
       var A = P[seg], B = P[seg + 1], e = u * u * (3 - 2 * u);
-      S.sp[q] = (A[2] + (B[2] - A[2]) * e) * map.sx;
-      var ca = COL[A[3]], cb = COL[B[3]];
+      S.sp[q] = A[2] + (B[2] - A[2]) * e;
+      var ca = A[3], cb = B[3];
       S.c[q * 3] = ca[0] + (cb[0] - ca[0]) * e;
       S.c[q * 3 + 1] = ca[1] + (cb[1] - ca[1]) * e;
       S.c[q * 3 + 2] = ca[2] + (cb[2] - ca[2]) * e;
       S.hot[q] = Math.pow(A[4] + (B[4] - A[4]) * e, 1.5);
+      S.room[q] = A[5] + (B[5] - A[5]) * e;
       S.s[q] = s;
     }
     var ang = new Float32Array(m);
@@ -485,8 +452,8 @@
       for (var w = Math.max(q - 4, 0); w <= Math.min(q + 4, m - 1); w++) if (Math.abs(kr[w]) > Math.abs(best)) best = kr[w];
       S.k[q] = best;
     }
-    var fi = def.fadeIn ? L * 0.3 : Math.min(90, L * 0.1);
-    var fo = def.fadeOut ? L * 0.3 : Math.min(90, L * 0.1);
+    var fi = def.fadeIn || Math.min(90, L * 0.1);
+    var fo = def.fadeOut || Math.min(90, L * 0.1);
     for (q = 0; q < m; q++) S.fade[q] = smooth(0, fi, S.s[q]) * smooth(0, fo, L - S.s[q]);
     return S;
   }
@@ -499,6 +466,7 @@
       mix3(tmpA, edge, o.mixEdge, tmpB);
       mix3(tmpB, COL.white, Math.min(1, o.mixWhite + o.hotWhite * S.hot[i]), tmpB);
       var a = o.a * S.fade[i];
+      if (o.room) a *= smooth(o.room[0], o.room[1], S.room[i]); // wide glows fade where the stream squeezes past content
       for (var side = -1; side <= 1; side += 2) {
         V[0] = S.x[i]; V[1] = S.y[i]; V[2] = S.nx[i]; V[3] = S.ny[i];
         V[4] = S.sp[i]; V[5] = S.s[i]; V[6] = side; V[7] = S.k[i];
@@ -525,13 +493,14 @@
     endStrip();
   }
 
-  function emitStream(def, map, rnd, fibres, gs, small) {
-    var S = sample(def, map);
+  function emitStream(def, rnd, fibres, gs, small) {
+    var S = sample(def);
     if (S.n < 3) return;
     var edge = COL[def.edge], seed = rnd(), TAU = 6.2832;
+    fibres = Math.round(fibres * (def.w < 0.6 ? 0.5 : 1));
     // soft haze, wide glow, tight glow, white-hot core
-    line(S, { kind: 1, b: 0, amp: 0.03, k: 0.004, hw: 96 * gs, a: 0.14, spd: 0.3, ph: rnd() * TAU, seed: seed, mixEdge: 0.4, mixWhite: 0, hotWhite: 0.1 }, edge);
-    line(S, { kind: 1, b: 0, amp: 0.03, k: 0.005, hw: 36 * gs, a: 0.36, spd: 0.35, ph: rnd() * TAU, seed: seed, mixEdge: 0.05, mixWhite: 0, hotWhite: 0.15 }, edge);
+    line(S, { kind: 1, b: 0, amp: 0.03, k: 0.004, hw: 96 * gs, a: 0.14, spd: 0.3, ph: rnd() * TAU, seed: seed, mixEdge: 0.4, mixWhite: 0, hotWhite: 0.1, room: [16, 130 * gs] }, edge);
+    line(S, { kind: 1, b: 0, amp: 0.03, k: 0.005, hw: 36 * gs, a: 0.36, spd: 0.35, ph: rnd() * TAU, seed: seed, mixEdge: 0.05, mixWhite: 0, hotWhite: 0.15, room: [6, 48 * gs] }, edge);
     line(S, { kind: 1, b: 0, amp: 0.02, k: 0.006, hw: 9 * gs, a: 0.66, spd: 0.4, ph: rnd() * TAU, seed: seed, mixEdge: 0, mixWhite: 0, hotWhite: 0.35 }, edge);
     line(S, { kind: 1, b: 0, amp: 0.015, k: 0.006, hw: Math.max(1.4, 2.3 * gs), a: 1, spd: 0.4, ph: rnd() * TAU, seed: seed, mixEdge: 0, mixWhite: 0.1, hotWhite: 0.75 }, edge);
     for (var f = 0; f < fibres; f++) {
@@ -560,26 +529,28 @@
     }
   }
 
-  function emitDust(map, tileW, tileH, rnd, small) {
-    var n = Math.floor(tileW * tileH / (small ? 11000 : 7000));
+  // specks of dust drifting in the free space between the content
+  function emitDust(F, rnd, small) {
+    var n = Math.floor(F.vw * F.docH / (small ? 14000 : 9000));
     for (var i = 0; i < n; i++) {
-      var pick = rnd();
+      var x = rnd() * F.vw, y = rnd() * F.docH, pick = rnd();
       var col = pick < 0.6 ? COL.orange : pick < 0.8 ? COL.purple : COL.blue;
-      var u = map.mirror ? 0.05 + 0.7 * rnd() : 0.25 + 0.7 * rnd();
-      quad(map.x0 + u * tileW, map.y0 + rnd() * tileH, 1, 0, 0.5 + 0.7 * rnd(), col, 0.12 + 0.3 * rnd(),
-        4 + 10 * rnd(), rnd() * 6.2832, 3, 0.3 + 1.2 * rnd(), rnd());
+      var size = 0.5 + 0.7 * rnd(), a = 0.12 + 0.3 * rnd(), drift = 4 + 10 * rnd(), ph = rnd() * 6.2832, spd = 0.3 + 1.2 * rnd(), seed = rnd();
+      if (F.room(x, y) < 20) continue;
+      quad(x, y, 1, 0, size, col, a, drift, ph, 3, spd, seed);
     }
   }
 
-  function emitNode(nd, map, rnd) {
-    var x = map.x(nd[0]), y = map.y(nd[1]), k = nd[2];
-    quad(x, y, 1, 0, 170 * map.sx, COL.pink, 0.2 * k, 0, rnd() * 6.2832, 2, 0, rnd());
-    quad(x, y, 1, 0, 70 * map.sx, COL.amber, 0.4 * k, 0, rnd() * 6.2832, 2, 0, rnd());
-    quad(x, y, 1, 0, 20 * map.sx, COL.white, 0.9 * k, 0, rnd() * 6.2832, 2, 0, rnd());
+  // a bright crossing; its glow is kept to the room around it so it doesn't wash over text
+  function emitNode(nd, sx, rnd) {
+    var k = nd.k, r = nd.room;
+    quad(nd.x, nd.y, 1, 0, Math.min(170 * sx, 50 + 2.2 * r), COL.pink, 0.2 * k, 0, rnd() * 6.2832, 2, 0, rnd());
+    quad(nd.x, nd.y, 1, 0, Math.min(70 * sx, 30 + 1.2 * r), COL.amber, 0.4 * k, 0, rnd() * 6.2832, 2, 0, rnd());
+    quad(nd.x, nd.y, 1, 0, 20 * sx, COL.white, 0.9 * k, 0, rnd() * 6.2832, 2, 0, rnd());
   }
 
   // ---------- deep space ----------
-  var NEB_PAR = 0.18;   // scroll factor of the nebula and the far stars (streams: PARALLAX)
+  var NEB_PAR = 0.18;   // scroll factor of the nebula and the far stars (the streams scroll with the page)
   var NEB_TEXEL = 2;    // CSS px per nebula texel: the gas is soft, bilinear upscaling hides it
   var NEB_GAIN = 0.64;  // brightness of the gas over the background colour (the texture holds it at half scale)
   // [r, g, b, weight]: blue, blue-white, white, yellow-white, orange, red
@@ -692,36 +663,453 @@
     starCount = slen / 16;
   }
 
-  var count = 0, builtW = 0, flowScale = 1;
+  // ---------- routing: the streams flow around the page content ----------
+  // The page is rasterised onto a coarse grid where cards, buttons, images and the actual line
+  // boxes of text are blocked. A distance field then says how much free room every point has.
+  // Streams are routed through that room with A*, smoothed into curves, and narrowed where it
+  // gets tight; where two of them meet, a crossing lights up.
+  function alphaOf(c) {
+    if (!c || c === 'transparent') return 0;
+    var m = /rgba?\(([^)]*)\)/.exec(c);
+    if (!m) return 1;
+    var p = m[1].split(/[\s,\/]+/).filter(Boolean);
+    return p.length > 3 ? parseFloat(p[3]) : 1;
+  }
+  // anything with a fill or a full outline is a solid block; a lone divider line is not
+  function isBox(cs) {
+    if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+    if (alphaOf(cs.backgroundColor) > 0.2) return true;
+    var sides = ['Top', 'Right', 'Bottom', 'Left'], n = 0;
+    for (var i = 0; i < 4; i++) {
+      var b = 'border' + sides[i];
+      if (cs[b + 'Style'] !== 'none' && parseFloat(cs[b + 'Width']) > 0 && alphaOf(cs[b + 'Color']) > 0.02) n++;
+    }
+    return n >= 2;
+  }
+  function scanObstacles() {
+    var out = [], ox = window.pageXOffset || 0, oy = window.pageYOffset || 0;
+    out.bar = 0; // height of a sticky/fixed bar at the top of the page
+    var range = document.createRange();
+    function push(r) { if (r.width > 1 && r.height > 1) out.push(r.left + ox, r.top + oy, r.right + ox, r.bottom + oy); }
+    (function walk(el) {
+      for (var n = el.firstChild; n; n = n.nextSibling) {
+        if (n.nodeType === 3) {
+          if (!/\S/.test(n.nodeValue)) continue;
+          range.selectNodeContents(n);
+          var rs = range.getClientRects(); // one box per line of text, not the whole paragraph
+          for (var i = 0; i < rs.length; i++) push(rs[i]);
+        } else if (n.nodeType === 1 && n !== canvas) {
+          var tag = n.nodeName.toLowerCase();
+          if (tag === 'script' || tag === 'style' || tag === 'template') continue;
+          var cs = getComputedStyle(n);
+          if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+          // the sticky header moves with the viewport: streams may cross under it, but shouldn't run along it
+          if (cs.position === 'fixed' || cs.position === 'sticky') {
+            var hr = n.getBoundingClientRect();
+            if (hr.top <= 1 && hr.width > window.innerWidth * 0.5) out.bar = Math.max(out.bar, hr.bottom);
+            continue;
+          }
+          if (/^(img|svg|video|canvas|iframe|input|textarea|select|button)$/.test(tag) || isBox(cs)) push(n.getBoundingClientRect());
+          else walk(n);
+        }
+      }
+    })(document.querySelector('.page') || document.body);
+    return out;
+  }
+
+  // exact Euclidean distance transform (Felzenszwalb & Huttenlocher), in cells²
+  function edt1(f, n, d, v, z) {
+    var k = 0, q, s;
+    v[0] = 0; z[0] = -1e20; z[1] = 1e20;
+    for (q = 1; q < n; q++) {
+      s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+      while (s <= z[k]) { k--; s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+      k++; v[k] = q; z[k] = s; z[k + 1] = 1e20;
+    }
+    for (k = 0, q = 0; q < n; q++) {
+      while (z[k + 1] < q) k++;
+      d[q] = (q - v[k]) * (q - v[k]) + f[v[k]];
+    }
+  }
+  function edt(f, cols, rows) {
+    var m = Math.max(cols, rows), g = new Float64Array(m), d = new Float64Array(m), v = new Int32Array(m), z = new Float64Array(m + 1), i, j;
+    for (i = 0; i < cols; i++) {
+      for (j = 0; j < rows; j++) g[j] = f[j * cols + i];
+      edt1(g, rows, d, v, z);
+      for (j = 0; j < rows; j++) f[j * cols + i] = d[j];
+    }
+    for (j = 0; j < rows; j++) {
+      for (i = 0; i < cols; i++) g[i] = f[j * cols + i];
+      edt1(g, cols, d, v, z);
+      for (i = 0; i < cols; i++) f[j * cols + i] = d[i];
+    }
+  }
+
+  function buildField(rects, vw, docH, small) {
+    var bar = rects.bar || 0;
+    var padX = small ? 72 : 120, padY = 160; // the grid runs past the screen edges: streams may leave the screen
+    var cols = Math.ceil((vw + 2 * padX) / CELL), rows = Math.ceil((docH + 2 * padY) / CELL), n = cols * rows, i, j, k;
+    var f = new Float64Array(n).fill(1e10);
+    for (var r = 0; r < rects.length; r += 4) {
+      var i0 = Math.max(0, Math.floor((rects[r] + padX) / CELL)), i1 = Math.min(cols - 1, Math.floor((rects[r + 2] + padX) / CELL));
+      var j0 = Math.max(0, Math.floor((rects[r + 1] + padY) / CELL)), j1 = Math.min(rows - 1, Math.floor((rects[r + 3] + padY) / CELL));
+      for (j = j0; j <= j1; j++) for (i = i0; i <= i1; i++) f[j * cols + i] = 0;
+    }
+    edt(f, cols, rows);
+    var D = new Float32Array(n), cost = new Float32Array(n);
+    var EDGE = small ? 40 : 56, PREF = small ? 64 : 110, MIN = small ? 8 : 14;
+    for (k = 0; k < n; k++) D[k] = f[k] > 0 ? Math.min(4000, Math.sqrt(f[k]) * CELL - CELL * 0.5) : 0;
+    for (j = 0; j < rows; j++) {
+      var y = (j + 0.5) * CELL - padY;
+      for (i = 0; i < cols; i++) {
+        k = j * cols + i;
+        var x = (i + 0.5) * CELL - padX;
+        var room = Math.max(0, Math.min(D[k], Math.min(x, vw - x) + EDGE));
+        var lack = 1 - Math.min(room, PREF) / PREF;
+        // prefer the middle of wide channels, stay on screen, and pass behind content only if there is no other way
+        cost[k] = 1 + 10 * lack * lack + (D[k] < MIN ? 250 : 0) + (y > -CELL && y < bar ? 40 : 0);
+      }
+    }
+    function bil(x, y) {
+      var gx = Math.min(Math.max((x + padX) / CELL - 0.5, 0), cols - 1.001), gy = Math.min(Math.max((y + padY) / CELL - 0.5, 0), rows - 1.001);
+      var ix = gx | 0, iy = gy | 0, fx = gx - ix, fy = gy - iy, o = iy * cols + ix;
+      return (D[o] * (1 - fx) + D[o + 1] * fx) * (1 - fy) + (D[o + cols] * (1 - fx) + D[o + cols + 1] * fx) * fy;
+    }
+    return {
+      cols: cols, rows: rows, padX: padX, padY: padY, vw: vw, docH: docH, D: D, cost: cost, edge: EDGE,
+      room: bil, // free room around a point, from the content only
+      vis: function (x, y) { return Math.min(bil(x, y), Math.min(x, vw - x) + EDGE); }, // …and from the screen edges
+      grad: function (x, y) {
+        var gx = bil(x + CELL, y) - bil(x - CELL, y), gy = bil(x, y + CELL) - bil(x, y - CELL), l = Math.hypot(gx, gy) || 1;
+        return [gx / l, gy / l];
+      },
+      cell: function (x, y) {
+        var i = Math.min(cols - 1, Math.max(0, Math.floor((x + padX) / CELL))), j = Math.min(rows - 1, Math.max(0, Math.floor((y + padY) / CELL)));
+        return j * cols + i;
+      }
+    };
+  }
+
+  function Heap() { this.key = []; this.val = []; this.size = 0; }
+  Heap.prototype.push = function (v, key) {
+    var i = this.size++, K = this.key, W = this.val;
+    while (i > 0) { var p = (i - 1) >> 1; if (K[p] <= key) break; K[i] = K[p]; W[i] = W[p]; i = p; }
+    K[i] = key; W[i] = v;
+  };
+  Heap.prototype.pop = function () {
+    var K = this.key, W = this.val, top = W[0], n = --this.size;
+    if (n > 0) {
+      var key = K[n], v = W[n], i = 0;
+      for (;;) {
+        var l = 2 * i + 1;
+        if (l >= n) break;
+        var c = l + 1 < n && K[l + 1] < K[l] ? l + 1 : l;
+        if (K[c] >= key) break;
+        K[i] = K[c]; W[i] = W[c]; i = c;
+      }
+      K[i] = key; W[i] = v;
+    }
+    return top;
+  };
+
+  var DIRS = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, Math.SQRT2], [1, -1, Math.SQRT2], [-1, 1, Math.SQRT2], [-1, -1, Math.SQRT2]];
+  function astar(F, a, b) {
+    var cols = F.cols, rows = F.rows, n = cols * rows, cost = F.cost;
+    var g = F.g || (F.g = new Float32Array(n)), from = F.from || (F.from = new Int32Array(n)), done = F.done || (F.done = new Uint8Array(n));
+    g.fill(Infinity); done.fill(0);
+    var s = F.cell(a.x, a.y), t = F.cell(b.x, b.y), tx = t % cols, ty = (t / cols) | 0;
+    // search only a band around the segment's height
+    var jlo = Math.max(0, Math.min(s / cols | 0, ty) - 40), jhi = Math.min(rows - 1, Math.max(s / cols | 0, ty) + 40);
+    var heap = new Heap();
+    g[s] = 0; from[s] = -1; heap.push(s, 0);
+    while (heap.size) {
+      var k = heap.pop();
+      if (k === t) break;
+      if (done[k]) continue;
+      done[k] = 1;
+      var x = k % cols, y = (k / cols) | 0;
+      for (var d = 0; d < 8; d++) {
+        var nx = x + DIRS[d][0], ny = y + DIRS[d][1];
+        if (nx < 0 || nx >= cols || ny < jlo || ny > jhi) continue;
+        var m = ny * cols + nx;
+        if (done[m]) continue;
+        var ng = g[k] + DIRS[d][2] * 0.5 * (cost[k] + cost[m]);
+        if (ng < g[m]) {
+          g[m] = ng; from[m] = k;
+          var ex = Math.abs(nx - tx), ey = Math.abs(ny - ty);
+          heap.push(m, ng + 1.3 * (Math.max(ex, ey) + 0.4142 * Math.min(ex, ey)));
+        }
+      }
+    }
+    var out = [];
+    if (g[t] === Infinity) { out = [[a.x, a.y], [b.x, b.y]]; out.cost = 1e9; return out; }
+    out.cost = g[t];
+    for (var c = t; c !== -1; c = from[c]) out.push([(c % cols + 0.5) * CELL - F.padX, ((c / cols | 0) + 0.5) * CELL - F.padY]);
+    out.reverse();
+    out[0] = [a.x, a.y];
+    out[out.length - 1] = [b.x, b.y];
+    return out;
+  }
+
+  function resample(P, step) {
+    var out = [[P[0][0], P[0][1]]], carry = 0;
+    for (var i = 1; i < P.length; i++) {
+      var ax = P[i - 1][0], ay = P[i - 1][1], dx = P[i][0] - ax, dy = P[i][1] - ay, L = Math.hypot(dx, dy);
+      for (var t = step - carry; t < L; t += step) out.push([ax + dx * t / L, ay + dy * t / L]);
+      carry = (carry + L) % step;
+    }
+    var last = P[P.length - 1], end = out[out.length - 1];
+    if (Math.hypot(last[0] - end[0], last[1] - end[1]) > step * 0.3) out.push([last[0], last[1]]);
+    else out[out.length - 1] = [last[0], last[1]];
+    return out;
+  }
+
+  // Taut-string smoothing: pull every point towards its neighbours, push it back out of the
+  // content where it got too close. Pinned points (crossings, ends) stay put.
+  function relax(F, P, iters, clear) {
+    for (var it = 0; it < iters; it++) {
+      for (var i = 1; i < P.length - 1; i++) {
+        var p = P[i];
+        if (p[2]) continue;
+        p[0] += 0.5 * ((P[i - 1][0] + P[i + 1][0]) / 2 - p[0]);
+        p[1] += 0.5 * ((P[i - 1][1] + P[i + 1][1]) / 2 - p[1]);
+        var d = F.room(p[0], p[1]);
+        if (d < clear) { var gr = F.grad(p[0], p[1]), mv = Math.min(clear - d, 4); p[0] += gr[0] * mv; p[1] += gr[1] * mv; }
+      }
+    }
+  }
+
+  // Route a stream through its anchors; returns the smoothed path and the arc positions of its crossings.
+  function arcs(P) {
+    var s = [0];
+    for (var i = 1; i < P.length; i++) s.push(s[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+    return s;
+  }
+  // A slow sideways wave, so long runs through a channel read as flowing light rather than a
+  // ruled line. It fades out towards pinned points and never takes more than the spare room.
+  function meander(F, P, s, clear, wave) {
+    if (!wave) return;
+    var pins = [];
+    for (var i = 0; i < P.length; i++) if (P[i][2]) pins.push(s[i]);
+    var off = [];
+    for (i = 0; i < P.length; i++) {
+      var a = P[Math.max(i - 2, 0)], b = P[Math.min(i + 2, P.length - 1)], tx = b[0] - a[0], ty = b[1] - a[1], tl = Math.hypot(tx, ty) || 1;
+      var near = 1e9;
+      for (var j = 0; j < pins.length; j++) near = Math.min(near, Math.abs(s[i] - pins[j]));
+      var spare = Math.max(0, F.room(P[i][0], P[i][1]) - clear - 10);
+      var amp = Math.min(wave.amp, 0.4 * spare) * smooth(0, 220, near);
+      var o = amp * Math.sin(6.2832 * s[i] / wave.len + wave.ph);
+      off.push([-ty / tl * o, tx / tl * o]);
+    }
+    for (i = 0; i < P.length; i++) if (!P[i][2]) { P[i][0] += off[i][0]; P[i][1] += off[i][1]; }
+  }
+
+  function routeStream(F, anchors, clear, wave) {
+    var P = [], keys = [];
+    for (var i = 0; i + 1 < anchors.length; i++) {
+      var from = anchors[i], raw = null;
+      var to = anchors[i + 1];
+      if (i > 0 && from.k && P.length > 6) {
+        // if the way on turns right back, first carry on past the crossing, so the stream passes
+        // through it instead of bouncing off it
+        var back = P[P.length - 7], dx = from.x - back[0], dy = from.y - back[1], dl = Math.hypot(dx, dy) || 1;
+        var ox = to.x - from.x, oy = to.y - from.y, ol = Math.hypot(ox, oy) || 1;
+        for (var lead = (dx * ox + dy * oy) / (dl * ol) < -0.5 ? 110 : 0; lead >= 40 && !raw; lead /= 2) {
+          var lx = from.x + dx / dl * lead, ly = from.y + dy / dl * lead;
+          if (F.room(lx, ly) >= clear) raw = [[from.x, from.y]].concat(astar(F, { x: lx, y: ly }, anchors[i + 1]));
+        }
+      }
+      var seg = resample(raw || astar(F, from, anchors[i + 1]), CELL);
+      if (i > 0) seg.shift();
+      else { seg[0][2] = 1; keys.push({ at: 0, a: anchors[0] }); }
+      seg[seg.length - 1][2] = anchors[i + 1].k || i + 2 === anchors.length ? 1 : 0; // waypoints only guide, crossings and ends stay
+      Array.prototype.push.apply(P, seg);
+      keys.push({ at: P.length - 1, a: anchors[i + 1] });
+    }
+    relax(F, P, 36, clear);
+    var s = arcs(P);
+    meander(F, P, s, clear, wave);
+    relax(F, P, 6, clear);
+    // arc length, and the arc position of every crossing on the way
+    s = arcs(P);
+    var nodes = [];
+    for (i = 0; i < keys.length; i++) if (keys[i].a.k) nodes.push({ s: s[keys[i].at], k: keys[i].a.k });
+    return { P: P, s: s, nodes: nodes };
+  }
+
+  var PALETTES = {
+    warm: ['magenta', 'purple', 'blue', 'purple', 'magenta', 'pink', 'red', 'pink'],
+    blue: ['blue', 'purple', 'blue', 'cyan'],
+    violet: ['purple', 'magenta', 'purple', 'blue']
+  };
+  function palAt(pal, u, out) {
+    var n = pal.length, i = Math.floor(u), f = u - i;
+    var a = COL[pal[((i % n) + n) % n]], b = COL[pal[(((i + 1) % n) + n) % n]];
+    return mix3(a, b, f * f * (3 - 2 * f), out);
+  }
+
+  // Turn a routed path into stream control points: colour, width and heat follow the crossings,
+  // and the bundle never gets wider than the room around it.
+  function toStream(F, R, st, sx) {
+    var pts = [], P = R.P, step = 24, next = 0;
+    for (var i = 0; i < P.length; i++) {
+      var last = i === P.length - 1;
+      if (R.s[i] < next && !P[i][2] && !last) continue;
+      next = R.s[i] + step;
+      var x = P[i][0], y = P[i][1], s = R.s[i], hot = 0, warm = 0, near = 1e9;
+      for (var j = 0; j < R.nodes.length; j++) {
+        var d = Math.abs(s - R.nodes[j].s), kk = R.nodes[j].k;
+        near = Math.min(near, d);
+        hot = Math.max(hot, kk * Math.exp(-Math.pow(d / (60 * sx), 2)));
+        warm = Math.max(warm, kk * Math.exp(-Math.pow(d / (170 * sx), 2)));
+      }
+      var c = palAt(PALETTES[st.pal], (s + st.shift) / (700 * sx), [0, 0, 0]);
+      mix3(c, COL.pink, smooth(0.1, 0.45, warm), c);
+      mix3(c, COL.orange, smooth(0.45, 0.8, warm), c);
+      mix3(c, COL.amber, smooth(0.85, 1, warm), c);
+      var room = F.room(x, y);
+      var want = sx * (6 + 42 * smooth(0, 240 * sx, near)) * st.w;
+      pts.push([x, y, Math.max(2, Math.min(want, (room - 10) / 1.6)), c, hot, room]);
+    }
+    return { pts: pts, edge: st.edge, w: st.w, fadeIn: st.fadeIn ? R.s[R.s.length - 1] * st.fadeIn : 0, fadeOut: st.fadeOut ? R.s[R.s.length - 1] * st.fadeOut : 0 };
+  }
+
+  // the best free spot in a region: as much room as possible, not too far from a preferred point
+  function spot(F, x0, x1, y0, y1, px, py, pull, cap) {
+    var best = null, bs = -1e9;
+    for (var y = y0; y <= y1; y += CELL) {
+      for (var x = x0; x <= x1; x += CELL) {
+        var r = F.vis(x, y), sc = Math.min(r, cap || 150) - pull * Math.hypot(x - px, y - py);
+        if (sc > bs) { bs = sc; best = { x: x, y: y, room: r }; }
+      }
+    }
+    return best || { x: px, y: py, room: F.room(px, py) };
+  }
+  // horizontal gaps between sections: rows that are mostly free across the screen
+  function gaps(F, y0, y1, need) {
+    var out = [], cur = null;
+    for (var y = y0; y < y1; y += CELL) {
+      var free = 0, tot = 0;
+      for (var x = CELL / 2; x < F.vw; x += CELL) { tot++; if (F.vis(x, y) >= need) free++; }
+      if (free >= tot * 0.5) { if (!cur) cur = { y0: y, y1: y }; cur.y1 = y; }
+      else if (cur) { out.push(cur); cur = null; }
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  // The composition: two streams fall into a bright crossing in the hero (the V), and one of them
+  // zigzags down the page — along a free side channel, across a gap between sections to the next
+  // crossing on the other side, and so on. At each of those crossings another stream comes down
+  // that side and leaves off the edge. A couple of thin branches peel off where there is room.
+  function compose(F, vw, vh, docH, small, sx) {
+    var pad = F.padX, nodes = [], plan = [], i;
+    var n0 = spot(F, vw * (small ? 0.5 : 0.45), vw * 0.97, 100, Math.min(vh * 0.85, docH * 0.6),
+      vw * (small ? 0.8 : 0.72), Math.min(Math.max(vh * 0.5, 180), 480), 0.12);
+    n0.k = 1; n0.side = 1;
+    nodes.push(n0);
+    var list = gaps(F, n0.y + vh * 0.3, docH - 60, small ? 18 : 30), side = 1, spacing = Math.max(vh * 0.55, 380);
+    // From the hero crossing the long stream sweeps down to one side and then crosses over to the first
+    // crossing below on the other side. Sweep left (as in the artwork) unless content is in the way.
+    for (i = 0; i < list.length; i++) {
+      var y1 = (list[i].y0 + list[i].y1) / 2;
+      if (y1 - n0.y < spacing) continue;
+      var yp = Math.min(y1, n0.y + vh * 0.7);
+      side = astar(F, n0, channel(-1, yp)).cost <= 2.8 * astar(F, n0, channel(1, yp)).cost ? 1 : -1;
+      break;
+    }
+    for (i = 0; i < list.length; i++) {
+      var g = list[i], y = (g.y0 + g.y1) / 2;
+      if (y - nodes[nodes.length - 1].y < spacing) continue;
+      var nd = side < 0 ? spot(F, -pad * 0.2, vw * 0.4, g.y0, g.y1, vw * 0.1, y, 0.1) : spot(F, vw * 0.6, vw + pad * 0.2, g.y0, g.y1, vw * 0.9, y, 0.1);
+      if (nd.room < (small ? 16 : 28)) continue;
+      nd.k = 0.65; nd.side = side;
+      nodes.push(nd);
+      side = -side;
+    }
+    function P(x, y) { return { x: x, y: y }; }
+    function channel(sd, y) { // a point in the free channel down one side of the page
+      return sd < 0 ? spot(F, -pad * 0.5, vw * 0.35, y - 2 * CELL, y + 2 * CELL, 0, y, 0.02, 1e4)
+                    : spot(F, vw * 0.65, vw + pad * 0.5, y - 2 * CELL, y + 2 * CELL, vw, y, 0.02, 1e4);
+    }
+    var dy = n0.y + 60;
+    plan.push({ anchors: [P(Math.max(-pad * 0.8, n0.x - 1.05 * dy), -80), n0, P(vw + pad * 0.7, n0.y + vh * 0.12)], pal: 'blue', edge: 'blue', w: 1, shift: 0 });
+    var spine = [P(Math.min(vw + pad * 0.8, n0.x + 0.7 * dy), -80), n0];
+    for (i = 1; i < nodes.length; i++) { spine.push(channel(-nodes[i].side, nodes[i].y)); spine.push(nodes[i]); }
+    var endSide = nodes.length > 1 ? nodes[nodes.length - 1].side : n0.side;
+    spine.push(channel(endSide, docH - Math.max(140, vh * 0.2)));
+    spine.push(P(endSide < 0 ? -pad * 0.8 : vw + pad * 0.8, docH + 80));
+    plan.push({ anchors: spine, pal: 'warm', edge: 'magenta', w: 1, shift: 0 });
+    for (i = 1; i < nodes.length; i++) {
+      var nd2 = nodes[i], sd = nd2.side;
+      var yTop = Math.max(nodes[i - 1].y + 80, nd2.y - vh * 0.75), yBot = Math.max(yTop + CELL, nd2.y - vh * 0.3);
+      var top = sd < 0 ? spot(F, -pad * 0.4, vw * 0.35, yTop, yBot, vw * 0.04, yTop, 0.05, 1e4) : spot(F, vw * 0.65, vw + pad * 0.4, yTop, yBot, vw * 0.96, yTop, 0.05, 1e4);
+      plan.push({ anchors: [top, nd2, P(sd < 0 ? -pad * 0.8 : vw + pad * 0.8, nd2.y + vh * 0.14)],
+        pal: i % 2 ? 'violet' : 'blue', edge: i % 2 ? 'purple' : 'blue', w: 0.8, shift: i * 1.7, fadeIn: 0.3 });
+    }
+
+    var clear = small ? 12 : 20, routed = [], out = [];
+    for (i = 0; i < plan.length; i++) routed.push(routeStream(F, plan[i].anchors, clear, { amp: small ? 14 : 38, len: (small ? 380 : 620) + 90 * i, ph: 1.9 * i }));
+
+    // branches: thin offshoots where a stream has plenty of room, away from the crossings
+    var cands = [];
+    for (i = 0; i < routed.length; i++) {
+      var R = routed[i];
+      for (var j = 8; j < R.P.length - 8; j += 4) {
+        var p = R.P[j], sj = R.s[j], far = true;
+        if (p[1] < vh * 0.6 || p[0] < 0 || p[0] > vw) continue;
+        for (var q = 0; q < R.nodes.length; q++) if (Math.abs(sj - R.nodes[q].s) < 320) far = false;
+        if (far && sj > 200 && R.s[R.s.length - 1] - sj > 300) cands.push({ r: i, j: j, room: F.vis(p[0], p[1]) });
+      }
+    }
+    cands.sort(function (a, b) { return b.room - a.room; });
+    var picked = [];
+    for (i = 0; i < cands.length && picked.length < 2; i++) {
+      var cd = cands[i];
+      if (cd.room < (small ? 30 : 60)) break;
+      var ok = true;
+      for (q = 0; q < picked.length; q++) if (Math.abs(routed[picked[q].r].P[picked[q].j][1] - routed[cd.r].P[cd.j][1]) < vh * 0.8) ok = false;
+      if (ok) picked.push(cd);
+    }
+    for (i = 0; i < picked.length; i++) {
+      var pr = routed[picked[i].r], pj = picked[i].j, a0 = pr.P[pj - 3], a1 = pr.P[pj + 3], base = pr.P[pj];
+      var tx = a1[0] - a0[0], ty = a1[1] - a0[1], tl = Math.hypot(tx, ty) || 1;
+      tx /= tl; ty /= tl;
+      var best = null;
+      for (var sgn = -1; sgn <= 1; sgn += 2) { // veer off to whichever side has more room
+        var ang = 0.55 * sgn, cx = tx * Math.cos(ang) - ty * Math.sin(ang), cy = tx * Math.sin(ang) + ty * Math.cos(ang);
+        var tgt = spot(F, base[0] + cx * 420 - 100, base[0] + cx * 420 + 100, base[1] + cy * 420 - 100, base[1] + cy * 420 + 100, base[0] + cx * 420, base[1] + cy * 420, 0.1);
+        if (!best || tgt.room > best.t.room) best = { t: tgt, cx: cx, cy: cy };
+      }
+      var split = { x: base[0], y: base[1], k: 0 };
+      var R2 = routeStream(F, [split, P(base[0] + best.cx * 70, base[1] + best.cy * 70), best.t], clear, null);
+      routed.push(R2);
+      plan.push({ pal: plan[picked[i].r].pal === 'warm' ? 'violet' : 'blue', edge: 'purple', w: 0.45, shift: 3.3 + i, fadeIn: 0.25, fadeOut: 0.45 });
+    }
+    for (i = 0; i < routed.length; i++) out.push(toStream(F, routed[i], plan[i], sx));
+    return { streams: out, nodes: nodes };
+  }
+
+  var count = 0, builtW = 0, builtH = 0, flowScale = 1;
   function build() {
     var vw = window.innerWidth, vh = window.innerHeight;
     var docH = Math.max(document.documentElement.scrollHeight, vh);
     var small = vw < 720;
-    // Never squeeze the composition: on narrow screens it's cropped, not scaled down.
-    var tileW = Math.max(vw, 640);
-    var bgH = vh + (docH - vh) * PARALLAX;
-    var tiles = Math.max(1, Math.round(bgH / (tileW * IMG_H / IMG_W)));
-    var tileH = bgH / tiles;
-    var gs = Math.min(1, Math.max(0.55, tileW / 1440));
+    var gs = Math.min(1, Math.max(0.55, Math.max(vw, 640) / 1440)); // glow widths
+    var sx = Math.min(Math.max(vw, 640) / 866, 1.8);                  // bundle widths and crossings
     flowScale = gs;
-    var crop = tileW - vw;
+    var F = buildField(scanObstacles(), vw, docH, small);
+    var comp = compose(F, vw, vh, docH, small, sx);
+    var rnd = rng(9173);
     len = 0; verts = 0;
-    for (var t = 0; t < tiles; t++) {
-      var mirror = t % 2 === 1; // alternate tiles are mirrored so long pages don't visibly repeat
-      var map = {
-        mirror: mirror, x0: -crop * (mirror ? 0.4 : 0.6), y0: t * tileH, sx: tileW / IMG_W, sy: tileH / IMG_H,
-        x: function (px) { return this.x0 + (this.mirror ? IMG_W - px : px) * this.sx; },
-        y: function (py) { return this.y0 + py * this.sy; }
-      };
-      var rnd = rng(9173 + t * 131);
-      emitDust(map, tileW, tileH, rnd, small);
-      for (var i = 0; i < STREAMS.length; i++) emitStream(STREAMS[i], map, rnd, small ? 22 : 44, gs, small);
-      for (var j = 0; j < NODES.length; j++) emitNode(NODES[j], map, rnd);
-    }
+    emitDust(F, rnd, small);
+    for (var i = 0; i < comp.streams.length; i++) emitStream(comp.streams[i], rnd, small ? 22 : 44, gs, small);
+    for (var j = 0; j < comp.nodes.length; j++) emitNode(comp.nodes[j], sx, rnd);
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     gl.bufferData(gl.ARRAY_BUFFER, buf.subarray(0, len), gl.STATIC_DRAW);
     count = verts;
     builtW = vw;
+    builtH = docH;
     buildSpace(vw, vh, docH);
   }
 
@@ -777,7 +1165,7 @@
     gl.useProgram(prog);
     attribs(vbo, LAYOUT, FLOATS);
     gl.uniform2f(U.u_view, cw, ch);
-    gl.uniform1f(U.u_scroll, y * PARALLAX);
+    gl.uniform1f(U.u_scroll, y); // the streams are laid out on the page, so they scroll with it
     gl.uniform1f(U.u_time, t);
     gl.uniform1f(U.u_dpr, dpr);
     gl.uniform1f(U.u_flow, flowScale);
@@ -802,11 +1190,19 @@
     }
   });
   window.addEventListener('scroll', request, { passive: true });
-  window.addEventListener('load', function () { build(); request(); });
+  // the streams follow the layout: re-route when the content moves (fonts, images, an opened FAQ answer)
+  function relayout() { clearTimeout(rebuildTimer); rebuildTimer = setTimeout(function () { build(); request(); }, 200); }
+  window.addEventListener('load', relayout);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+  if (window.ResizeObserver) {
+    new ResizeObserver(function () {
+      if (builtW && Math.abs(document.documentElement.scrollHeight - builtH) > 4) relayout();
+    }).observe(document.querySelector('.page') || document.body);
+  }
   document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); else start(); });
   canvas.addEventListener('webglcontextlost', function (e) { e.preventDefault(); stop(); fallback(); });
 
   size(true);
-  build();
-  start();
+  // measure the page once it has been laid out and painted
+  requestAnimationFrame(function () { setTimeout(function () { build(); start(); }, 0); });
 })();
