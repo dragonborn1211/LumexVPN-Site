@@ -87,17 +87,26 @@
     '  float minHw = 0.8 / u_dpr;',
     '  if (hw < minHw) { alpha *= hw / minHw; hw = minHw; }',
     '  if (kind < 1.5) {',
-    // a_p = (spread, arc length, side, -); a_f = (bundle offset, sway, sway frequency, half-width)
+    // a_p = (spread, arc length, side, curvature); a_f = (bundle offset, sway, sway frequency, half-width)
     '    float breathe = 1.0 + 0.08 * sin(t * 0.33 + a_g.w * 6.2832);',
     '    float sway = a_f.y * sin(a_p.y * a_f.z + t * a_g.z + a_g.x);',
-    '    pos += n * (a_p.x * (a_f.x + sway) * breathe);',
+    '    float off = a_p.x * (a_f.x + sway) * breathe + a_p.z * hw;',
+    // a_p.w = signed curvature of the centre-line. Pushing a vertex past the centre of a tight
+    // turn folds the strip over itself and draws "spokes"; compress the offset so it approaches
+    // but never reaches the centre, and fade out fibres that would have crossed it.
+    '    float inward = off * a_p.w;',
+    '    if (inward > 0.0) {',
+    '      float lim = 0.92 / abs(a_p.w);',
+    '      if (kind < 0.5) alpha *= 1.0 - smoothstep(0.65, 1.0, inward);',
+    '      off = sign(off) * lim * (1.0 - exp(-abs(off) / lim));',
+    '    }',
+    '    pos += n * off;',
     '    if (kind < 0.5) {',
     '      float seg = sin(a_p.y * (0.0028 + 0.0024 * fract(a_g.w * 7.13)) + a_g.x * 3.1 + t * 0.15);',
     '      alpha *= smoothstep(-0.45, 0.5, seg);',
     '    }',
     '    float pl = sin((a_p.y - t * 150.0) * 0.0042 + a_g.w * 6.2832);',
     '    alpha *= 1.0 + pow(max(pl, 0.0), 28.0) * (kind > 0.5 ? 2.4 : 1.4);',
-    '    pos += n * (a_p.z * hw);',
     '  } else {',
     '    float tw = kind > 2.5 ? 0.25 + 0.75 * (0.5 + 0.5 * sin(t * a_g.z + a_g.x)) : 0.86 + 0.14 * sin(t * 0.6 + a_g.x);',
     '    alpha *= tw;',
@@ -107,7 +116,7 @@
     '  vec2 clip = (pos - vec2(0.0, u_scroll)) / u_view * 2.0 - 1.0;',
     '  gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);',
     '  v_col = vec4(a_col.rgb, alpha);',
-    '  v_uv = a_p.zw;',
+    '  v_uv = kind < 1.5 ? vec2(a_p.z, 0.0) : a_p.zw;',
     '  v_kind = kind;',
     '}'
   ].join('\n');
@@ -224,7 +233,8 @@
     var S = {
       n: m, L: L,
       x: new Float32Array(m), y: new Float32Array(m), nx: new Float32Array(m), ny: new Float32Array(m),
-      sp: new Float32Array(m), c: new Float32Array(m * 3), hot: new Float32Array(m), s: new Float32Array(m), fade: new Float32Array(m)
+      sp: new Float32Array(m), c: new Float32Array(m * 3), hot: new Float32Array(m), s: new Float32Array(m), fade: new Float32Array(m),
+      k: new Float32Array(m)
     };
     var k = 0;
     for (var q = 0; q < m; q++) {
@@ -244,11 +254,27 @@
       S.hot[q] = Math.pow(A[4] + (B[4] - A[4]) * e, 1.5);
       S.s[q] = s;
     }
+    var ang = new Float32Array(m);
     for (q = 0; q < m; q++) {
       var a = Math.max(q - 1, 0), b = Math.min(q + 1, m - 1);
       var tx = S.x[b] - S.x[a], ty = S.y[b] - S.y[a], tl = Math.hypot(tx, ty) || 1;
       S.nx[q] = -ty / tl;
       S.ny[q] = tx / tl;
+      ang[q] = Math.atan2(ty, tx);
+    }
+    // Signed curvature (1/radius) along the normal above: the turn's centre sits at P + n / k.
+    // Take the sharpest value within a few samples so the shader's clamp errs on the safe side.
+    var kr = new Float32Array(m);
+    for (q = 0; q < m; q++) {
+      var qa = Math.max(q - 2, 0), qb = Math.min(q + 2, m - 1);
+      var da = ang[qb] - ang[qa];
+      if (da > Math.PI) da -= 2 * Math.PI; else if (da < -Math.PI) da += 2 * Math.PI;
+      kr[q] = qb > qa ? da / ((qb - qa) * STEP) : 0;
+    }
+    for (q = 0; q < m; q++) {
+      var best = kr[q];
+      for (var w = Math.max(q - 4, 0); w <= Math.min(q + 4, m - 1); w++) if (Math.abs(kr[w]) > Math.abs(best)) best = kr[w];
+      S.k[q] = best;
     }
     var fi = def.fadeIn ? L * 0.3 : Math.min(90, L * 0.1);
     var fo = def.fadeOut ? L * 0.3 : Math.min(90, L * 0.1);
@@ -266,7 +292,7 @@
       var a = o.a * S.fade[i];
       for (var side = -1; side <= 1; side += 2) {
         V[0] = S.x[i]; V[1] = S.y[i]; V[2] = S.nx[i]; V[3] = S.ny[i];
-        V[4] = S.sp[i]; V[5] = S.s[i]; V[6] = side; V[7] = 0;
+        V[4] = S.sp[i]; V[5] = S.s[i]; V[6] = side; V[7] = S.k[i];
         V[8] = tmpB[0]; V[9] = tmpB[1]; V[10] = tmpB[2]; V[11] = a;
         V[12] = o.b; V[13] = o.amp; V[14] = o.k; V[15] = o.hw;
         V[16] = o.ph; V[17] = o.kind; V[18] = o.spd; V[19] = o.seed;
