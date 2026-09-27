@@ -41,8 +41,8 @@
   // Control points: [x, y, bundle half-width, colour, hotness 0..1 (1 = white-hot crossing)]
   var STREAMS = [
     { edge: 'blue', fadeIn: true, pts: [
-      [90, -20, 42, 'blue', 0], [260, 95, 50, 'blue', 0], [440, 165, 36, 'purple', 0],
-      [565, 228, 16, 'pink', 0.25], [628, 287, 5, 'amber', 1], [735, 290, 18, 'purple', 0.35],
+      [430, -60, 40, 'blue', 0], [482, 40, 44, 'blue', 0], [542, 140, 32, 'purple', 0],
+      [594, 226, 15, 'pink', 0.25], [628, 287, 5, 'amber', 1], [735, 290, 18, 'purple', 0.35],
       [860, 305, 46, 'blue', 0.05], [990, 350, 70, 'cyan', 0]] },
     { edge: 'magenta', pts: [
       [770, -40, 62, 'magenta', 0], [705, 110, 42, 'pink', 0.05], [652, 228, 14, 'orange', 0.35],
