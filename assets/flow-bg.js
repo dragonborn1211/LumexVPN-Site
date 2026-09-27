@@ -105,7 +105,7 @@
     // Light running along the streams: comets with a white-hot head and a fading tail. Glow lines
     // of one stream share a seed, so they surge together; every fibre carries its own faster comets.
     // u_flow scales speed, spacing and tail with the size of the composition.
-    '    float spd = (kind > 0.5 ? 560.0 + 300.0 * fract(a_g.w * 13.7) : 620.0 + 420.0 * fract(a_g.w * 13.7)) * u_flow;',
+    '    float spd = (kind > 0.5 ? 400.0 + 210.0 * fract(a_g.w * 13.7) : 440.0 + 290.0 * fract(a_g.w * 13.7)) * u_flow;',
     '    float per = (kind > 0.5 ? 1500.0 : 650.0 + 650.0 * fract(a_g.w * 5.3)) * u_flow;',
     '    float behind = fract((t * spd - a_p.y) / per + a_g.w) * per;',
     '    float comet = exp(-behind / ((kind > 0.5 ? 260.0 : 150.0) * u_flow)) * smoothstep(0.0, 14.0 * u_flow, behind);',
