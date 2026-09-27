@@ -74,7 +74,7 @@
   var VS = [
     'precision highp float;',
     'attribute vec2 a_c; attribute vec2 a_n; attribute vec4 a_p; attribute vec4 a_col; attribute vec4 a_f; attribute vec4 a_g;',
-    'uniform vec2 u_view; uniform float u_scroll; uniform float u_time; uniform float u_dpr;',
+    'uniform vec2 u_view; uniform float u_scroll; uniform float u_time; uniform float u_dpr; uniform float u_flow;',
     'varying vec4 v_col; varying vec2 v_uv; varying float v_kind;',
     'void main() {',
     '  float kind = a_g.y;',
@@ -83,6 +83,7 @@
     '  vec2 tg = vec2(-n.y, n.x);',
     '  vec2 pos = a_c;',
     '  float alpha = a_col.a;',
+    '  vec3 col = a_col.rgb;',
     '  float hw = a_f.w;',
     '  float minHw = 0.8 / u_dpr;',
     '  if (hw < minHw) { alpha *= hw / minHw; hw = minHw; }',
@@ -101,12 +102,21 @@
     '      off = sign(off) * lim * (1.0 - exp(-abs(off) / lim));',
     '    }',
     '    pos += n * off;',
+    // Light running along the streams: comets with a white-hot head and a fading tail. Glow lines
+    // of one stream share a seed, so they surge together; every fibre carries its own faster comets.
+    // u_flow scales speed, spacing and tail with the size of the composition.
+    '    float spd = (kind > 0.5 ? 560.0 + 300.0 * fract(a_g.w * 13.7) : 620.0 + 420.0 * fract(a_g.w * 13.7)) * u_flow;',
+    '    float per = (kind > 0.5 ? 1500.0 : 650.0 + 650.0 * fract(a_g.w * 5.3)) * u_flow;',
+    '    float behind = fract((t * spd - a_p.y) / per + a_g.w) * per;',
+    '    float comet = exp(-behind / ((kind > 0.5 ? 260.0 : 150.0) * u_flow)) * smoothstep(0.0, 14.0 * u_flow, behind);',
+    // only fibres and the narrow glow lines carry comets: on the wide haze a travelling flash reads as a pale slab
+    '    comet *= kind > 0.5 ? clamp(1.0 - (hw - 8.0) / 24.0, 0.0, 1.0) : 1.0;',
     '    if (kind < 0.5) {',
     '      float seg = sin(a_p.y * (0.0028 + 0.0024 * fract(a_g.w * 7.13)) + a_g.x * 3.1 + t * 0.15);',
-    '      alpha *= smoothstep(-0.45, 0.5, seg);',
+    '      alpha *= max(smoothstep(-0.45, 0.5, seg), comet * 0.7);',
     '    }',
-    '    float pl = sin((a_p.y - t * 150.0) * 0.0042 + a_g.w * 6.2832);',
-    '    alpha *= 1.0 + pow(max(pl, 0.0), 28.0) * (kind > 0.5 ? 2.4 : 1.4);',
+    '    alpha *= 1.0 + comet * (kind > 0.5 ? 2.2 : 3.0);',
+    '    col = mix(col, vec3(1.0, 0.97, 0.94), comet * 0.5);',
     '  } else {',
     '    float tw = kind > 2.5 ? 0.25 + 0.75 * (0.5 + 0.5 * sin(t * a_g.z + a_g.x)) : 0.86 + 0.14 * sin(t * 0.6 + a_g.x);',
     '    alpha *= tw;',
@@ -115,7 +125,7 @@
     '  }',
     '  vec2 clip = (pos - vec2(0.0, u_scroll)) / u_view * 2.0 - 1.0;',
     '  gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);',
-    '  v_col = vec4(a_col.rgb, alpha);',
+    '  v_col = vec4(col, alpha);',
     '  v_uv = kind < 1.5 ? vec2(a_p.z, 0.0) : a_p.zw;',
     '  v_kind = kind;',
     '}'
@@ -164,6 +174,7 @@
   var uScroll = gl.getUniformLocation(prog, 'u_scroll');
   var uTime = gl.getUniformLocation(prog, 'u_time');
   var uDpr = gl.getUniformLocation(prog, 'u_dpr');
+  var uFlow = gl.getUniformLocation(prog, 'u_flow');
   gl.disable(gl.DEPTH_TEST);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_COLOR); // screen: overlapping light saturates softly instead of clipping
@@ -369,7 +380,7 @@
     quad(x, y, 1, 0, 20 * map.sx, COL.white, 0.9 * k, 0, rnd() * 6.2832, 2, 0, rnd());
   }
 
-  var count = 0, builtW = 0;
+  var count = 0, builtW = 0, flowScale = 1;
   function build() {
     var vw = window.innerWidth, vh = window.innerHeight;
     var docH = Math.max(document.documentElement.scrollHeight, vh);
@@ -380,6 +391,7 @@
     var tiles = Math.max(1, Math.round(bgH / (tileW * IMG_H / IMG_W)));
     var tileH = bgH / tiles;
     var gs = Math.min(1, Math.max(0.55, tileW / 1440));
+    flowScale = gs;
     var crop = tileW - vw;
     len = 0; verts = 0;
     for (var t = 0; t < tiles; t++) {
@@ -422,6 +434,7 @@
     gl.uniform1f(uScroll, (window.pageYOffset || 0) * PARALLAX);
     gl.uniform1f(uTime, REDUCE ? 16 : (now / 1000) % 20000);
     gl.uniform1f(uDpr, dpr);
+    gl.uniform1f(uFlow, flowScale);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, count);
     if (!shown) { shown = true; canvas.classList.add('on'); }
     if (running) raf = requestAnimationFrame(draw);
