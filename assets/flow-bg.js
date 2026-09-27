@@ -48,7 +48,8 @@
       [770, -40, 62, 'magenta', 0], [705, 110, 42, 'pink', 0.05], [652, 228, 14, 'orange', 0.35],
       [625, 288, 5, 'amber', 1], [520, 322, 13, 'orange', 0.5], [392, 370, 22, 'red', 0.1],
       [306, 432, 28, 'red', 0], [352, 490, 22, 'red', 0], [520, 524, 16, 'red', 0.1],
-      [680, 566, 18, 'pink', 0.2], [742, 632, 16, 'pink', 0.35], [706, 690, 12, 'pink', 0.3],
+      [680, 566, 18, 'pink', 0.2], [722, 588, 17, 'pink', 0.28], [746, 626, 16, 'pink', 0.35],
+      [740, 664, 14, 'pink', 0.33], [706, 690, 12, 'pink', 0.3],
       [585, 712, 7, 'orange', 0.75], [482, 738, 11, 'orange', 0.5], [452, 792, 13, 'orange', 0.6],
       [512, 860, 18, 'orange', 0.3], [645, 915, 24, 'red', 0.1], [795, 975, 34, 'red', 0],
       [950, 1035, 50, 'purple', 0]] },
@@ -94,7 +95,10 @@
     // a_p = (spread, arc length, side, curvature); a_f = (bundle offset, sway, sway frequency, half-width)
     '    float breathe = 1.0 + 0.04 * sin(t * 0.33 + a_g.w * 6.2832);',
     '    float sway = 0.5 * a_f.y * sin(a_p.y * a_f.z + t * a_g.z + a_g.x);',
-    '    float off = a_p.x * (a_f.x + sway) * breathe + a_p.z * hw;',
+    // a_f.x: bundle offset for fibres; for glow lines, a width scale that narrows them through tight turns
+    '    float bOff = kind > 0.5 ? 0.0 : a_f.x;',
+    '    float hwS = kind > 0.5 ? a_f.x : 1.0;',
+    '    float off = a_p.x * (bOff + sway) * breathe + a_p.z * hw * hwS;',
     // a_p.w = signed curvature of the centre-line. Pushing a vertex past the centre of a tight
     // turn folds the strip over itself and draws "spokes"; compress the offset so it approaches
     // but never reaches the centre, and fade out fibres that would have crossed it.
@@ -488,6 +492,30 @@
       for (var w = Math.max(q - 4, 0); w <= Math.min(q + 4, m - 1); w++) if (Math.abs(kr[w]) > Math.abs(best)) best = kr[w];
       S.k[q] = best;
     }
+    // A bundle wider than its turning radius bunches up into a crease on the inside of the turn.
+    // Through tight turns the whole bundle narrows instead (fibres reach ~half the radius), easing
+    // in and out over a few dozen pixels so it reads as a smooth pinch.
+    // The glow lines do the same, from the (eased) turning radius kept in S.rad.
+    function ease(src, dst) {
+      var W = 7, low = new Float32Array(m), a, b, w2;
+      for (a = 0; a < m; a++) {
+        var mn = src[a];
+        for (w2 = Math.max(a - W, 0); w2 <= Math.min(a + W, m - 1); w2++) mn = Math.min(mn, src[w2]);
+        low[a] = mn;
+      }
+      for (a = 0; a < m; a++) {
+        var sum = 0, cnt = 0;
+        for (b = Math.max(a - W, 0); b <= Math.min(a + W, m - 1); b++) { sum += low[b]; cnt++; }
+        dst[a] = sum / cnt;
+      }
+    }
+    var lim = new Float32Array(m), eased = new Float32Array(m);
+    for (q = 0; q < m; q++) lim[q] = Math.min(S.sp[q], 0.34 / (Math.abs(S.k[q]) + 1e-6));
+    ease(lim, eased);
+    for (q = 0; q < m; q++) S.sp[q] = Math.min(S.sp[q], eased[q]);
+    S.rad = new Float32Array(m);
+    for (q = 0; q < m; q++) lim[q] = Math.min(4000, 1 / (Math.abs(S.k[q]) + 1e-6));
+    ease(lim, S.rad);
     var fi = def.fadeIn ? L * 0.3 : Math.min(90, L * 0.1);
     var fo = def.fadeOut ? L * 0.3 : Math.min(90, L * 0.1);
     for (q = 0; q < m; q++) S.fade[q] = smooth(0, fi, S.s[q]) * smooth(0, fo, L - S.s[q]);
@@ -506,7 +534,7 @@
         V[0] = S.x[i]; V[1] = S.y[i]; V[2] = S.nx[i]; V[3] = S.ny[i];
         V[4] = S.sp[i]; V[5] = S.s[i]; V[6] = side; V[7] = S.k[i];
         V[8] = tmpB[0]; V[9] = tmpB[1]; V[10] = tmpB[2]; V[11] = a;
-        V[12] = o.b; V[13] = o.amp; V[14] = o.k; V[15] = o.hw;
+        V[12] = o.kind > 0.5 ? Math.max(0.12, Math.min(1, 0.6 * S.rad[i] / o.hw)) : o.b; V[13] = o.amp; V[14] = o.k; V[15] = o.hw;
         V[16] = o.ph; V[17] = o.kind; V[18] = o.spd; V[19] = o.seed;
         vtx();
       }
